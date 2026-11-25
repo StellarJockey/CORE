@@ -10,7 +10,7 @@
 		ypos					0
 		tabPosition				0
 
-		navUp					MapButton27
+		navUp					MapButton47
 		navDown					MapButton1
 	}
 
@@ -416,6 +416,306 @@
 		pin_to_sibling_corner	2
 
 		navUp					MapButton26
+		navDown					MapButton28
+	}
+
+	MapButton28
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				28
+
+		pin_to_sibling			MapButton27
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton27
+		navDown					MapButton29
+	}
+
+	MapButton29
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				29
+
+		pin_to_sibling			MapButton28
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton28
+		navDown					MapButton30
+	}
+
+	MapButton30
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				30
+
+		pin_to_sibling			MapButton29
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton29
+		navDown					MapButton31
+	}
+
+	MapButton31
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				31
+
+		pin_to_sibling			MapButton30
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton30
+		navDown					MapButton32
+	}
+
+	MapButton32
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				32
+
+		pin_to_sibling			MapButton31
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton31
+		navDown					MapButton33
+	}
+
+	MapButton33
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				33
+
+		pin_to_sibling			MapButton32
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton32
+		navDown					MapButton34
+	}
+
+	MapButton34
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				34
+
+		pin_to_sibling			MapButton33
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton33
+		navDown					MapButton35
+	}
+
+	MapButton35
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				35
+
+		pin_to_sibling			MapButton34
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton34
+		navDown					MapButton36
+	}
+
+	MapButton36
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				36
+
+		pin_to_sibling			MapButton35
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton35
+		navDown					MapButton37
+	}
+
+	MapButton37
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				37
+
+		pin_to_sibling			MapButton36
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton36
+		navDown					MapButton38
+	}
+
+	MapButton38
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				38
+
+		pin_to_sibling			MapButton37
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton37
+		navDown					MapButton39
+	}
+
+	MapButton39
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				39
+
+		pin_to_sibling			MapButton38
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton38
+		navDown					MapButton40
+	}
+
+	MapButton40
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				40
+
+		pin_to_sibling			MapButton39
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton39
+		navDown					MapButton41
+	}
+
+	MapButton41
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				41
+
+		pin_to_sibling			MapButton40
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton40
+		navDown					MapButton42
+	}
+
+	MapButton42
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				42
+
+		pin_to_sibling			MapButton41
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton41
+		navDown					MapButton43
+	}
+
+	MapButton43
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				43
+
+		pin_to_sibling			MapButton42
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton42
+		navDown					MapButton44
+	}
+
+	MapButton44
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				44
+
+		pin_to_sibling			MapButton43
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton43
+		navDown					MapButton45
+	}
+
+	MapButton45
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				45
+
+		pin_to_sibling			MapButton44
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton44
+		navDown					MapButton46
+	}
+
+	MapButton46
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				46
+
+		pin_to_sibling			MapButton45
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton45
+		navDown					MapButton47
+	}
+
+	MapButton47
+	{
+		ControlName				BaseModHybridButton
+		InheritProperties		CompactButton
+		classname				MapButtonClass
+		scriptID				47
+
+		pin_to_sibling			MapButton46
+		pin_corner_to_sibling	0
+		pin_to_sibling_corner	2
+
+		navUp					MapButton46
 		navDown					MapButton0
 	}
 }

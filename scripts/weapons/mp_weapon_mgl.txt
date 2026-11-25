@@ -31,12 +31,16 @@ WeaponData
 	// Effects
 	"tracer_effect"   								"weapon_tracers_xo16"
 	"impact_effect_table" 							"exp_mgl"
-	"projectile_trail_effect_0" 						"wpn_grenade_frag_mag"
+	"projectile_trail_effect_0" 					"wpn_grenade_frag_mag"
 	"vortex_absorb_effect"							"wpn_vortex_projectile_frag_FP"
 	"vortex_absorb_effect_third_person"				"wpn_vortex_projectile_frag"
 	"vortex_absorb_sound"							"Vortex_Shield_AbsorbBulletLarge"
 	"vortex_drain"									".08"
 	"adjust_to_gun_barrel"							"1"
+
+	"fx_shell_eject_view"							"wpn_shelleject_mgl_FP"
+	"fx_shell_eject_world"							"wpn_shelleject_mgl"
+	"fx_shell_eject_attach"							"shell"
 
 	"fx_muzzle_flash_view"							"P_wpn_muzzleflash_mgl_FP_FULL"
 	"fx_muzzle_flash_world"							"P_wpn_muzzleflash_mgl_FULL"
@@ -51,17 +55,17 @@ WeaponData
 	"damage_near_value_titanarmor"					"0"
 	"damage_far_value_titanarmor" 					"0"
 	"explosion_damage"								"120"
-	"explosion_damage_heavy_armor"					"385"
+	"explosion_damage_heavy_armor"					"400" // "385"
 
 	// Damage - When Used by NPCs
 	"npc_damage_near_distance"						"100"
-	"npc_damage_far_distance" 						"1500"
-	"npc_damage_near_value"   						"0"
-	"npc_damage_far_value"							"0"
+	"npc_damage_far_distance" 						"15000"
+	"npc_damage_near_value"   						"25"
+	"npc_damage_far_value"							"25"
 	"npc_damage_near_value_titanarmor"				"0"
 	"npc_damage_far_value_titanarmor" 				"0"
 	"npc_explosion_damage"							"120"
-	"npc_explosion_damage_heavy_armor"				"385"
+	"npc_explosion_damage_heavy_armor"				"400"
 
 	"explosion_inner_radius"  						"100"
 	"explosionradius" 								"250"
@@ -169,13 +173,22 @@ WeaponData
 	"bob_yaw" 										"0.5"
 	"bob_roll"										"-0.75"
 
+	// Bob_Zoomed
+	"bob_cycle_time_zoomed"  						"0.45"
+	"bob_vert_dist_zoomed"   						"0.01"
+	"bob_horz_dist_zoomed"   						"0.01"
+	"bob_max_speed_zoomed"   						"150"
+	//"bob_pitch_zoomed"   							"0.002"
+	//"bob_yaw_zoomed" 								"-.002"
+	//"bob_roll_zoomed"								".002"
+
 	// View Drift
-	"viewdrift_ads_stand_scale_pitch" 				"0.6"
-	"viewdrift_ads_crouch_scale_pitch"				"0.6"
-	"viewdrift_ads_air_scale_pitch"   				"0.6"
-	"viewdrift_ads_stand_scale_yaw"   				"0.6"
-	"viewdrift_ads_crouch_scale_yaw"  				"0.6"
-	"viewdrift_ads_air_scale_yaw" 					"0.6"
+	"viewdrift_ads_stand_scale_pitch" 				"0.0" // "0.6"
+	"viewdrift_ads_crouch_scale_pitch"				"0.0" // "0.6"
+	"viewdrift_ads_air_scale_pitch"   				"0.0" // "0.6"
+	"viewdrift_ads_stand_scale_yaw"   				"0.0" // "0.6"
+	"viewdrift_ads_crouch_scale_yaw"  				"0.0" // "0.6"
+	"viewdrift_ads_air_scale_yaw" 					"0.0" // "0.6"
 
 	// Rumble
 	"fire_rumble"									"pilot_singleshot_strong_fire"
@@ -230,21 +243,23 @@ WeaponData
 	"npc_min_range_secondary" 						"0"
 	"npc_max_range_secondary" 						"2500"
 	"npc_min_burst"   								"1"
-	"npc_max_burst"   								"1"
+	"npc_max_burst"   								"3" // "1"
 	"rest_time_between_bursts_min"					"0.5"
 	"rest_time_between_bursts_max"					"1"
+	"npc_vortex_block"								"1"
 
 	// WeaponED Unhandled Key/Values and custom script Key/Values
-	"viewdrift_hipfire_stand_scale_pitch" 			"0.325"
-	"viewdrift_hipfire_crouch_scale_pitch"			"0.275"
-	"viewdrift_hipfire_air_scale_pitch"   			"0.5"
-	"viewdrift_hipfire_stand_scale_yaw"   			"0.12"
-	"viewdrift_hipfire_crouch_scale_yaw"  			"0.10"
-	"viewdrift_hipfire_air_scale_yaw" 				"0.22"
-	"viewdrift_hipfire_speed_pitch"   				"0.6"
-	"viewdrift_hipfire_speed_yaw" 					"1.22"
-	"viewdrift_ads_speed_pitch"   					"0.63"
-	"viewdrift_ads_speed_yaw" 						"0.6"
+	"viewdrift_hipfire_stand_scale_pitch" 			"0.0" // "0.325"
+	"viewdrift_hipfire_crouch_scale_pitch"			"0.0" // "0.275"
+	"viewdrift_hipfire_air_scale_pitch"   			"0.0" // "0.5"
+	"viewdrift_hipfire_stand_scale_yaw"   			"0.0" // "0.12"
+	"viewdrift_hipfire_crouch_scale_yaw"  			"0.0" // "0.10"
+	"viewdrift_hipfire_air_scale_yaw" 				"0.0" // "0.22"
+	"viewdrift_hipfire_speed_pitch"   				"0.0" // "0.6"
+	"viewdrift_hipfire_speed_yaw" 					"0.0" // "1.22"
+	"viewdrift_ads_speed_pitch"   					"0.0" // "0.63"
+	"viewdrift_ads_speed_yaw" 						"0.0" // "0.6"
+	
 	"sprintcycle_time"								".55"
 	"is_anti_titan"  							    "1"
 	"hud_icon"										"HUD/dpad_mgl"
@@ -269,6 +284,12 @@ WeaponData
 			"explosion_damage"								"100++"
 			"explosion_damage_heavy_armor"					"100++"
 			"fire_rate"   									"2.5"
+		}
+		extended_ammo
+		{
+			"ammo_stockpile_max"				"126"
+			"ammo_clip_size"   					"7"
+			"ammo_default_total"				"126"
 		}
 		pas_fast_reload
 		{

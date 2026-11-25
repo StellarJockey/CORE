@@ -601,17 +601,24 @@ function SmartPistol_DamagedPlayerOrNPC( ent, damageInfo )
 	if ( !IsValid( ent ) )
 		return
 
+	local isPilot = false
+	if ( "isPilot" in ent.s || "isGhostPilot" in ent.s )
+		isPilot = true
+
 	local maxHealth = ent.GetMaxHealth()
 	local damage = damageInfo.GetDamage()
 
 	if ( ent.IsSpectre() )
 	{
-		damageInfo.SetDamage( (maxHealth / 2) + 1 )
+		damageInfo.SetDamage( (maxHealth / 4) + 1 )
 	}
-	else if ( ent.IsSoldier() )
+	else if ( ent.IsSoldier() && isPilot )
 	{
-		if ( damage < maxHealth )
-			damageInfo.SetDamage( maxHealth )
+		damageInfo.SetDamage( (maxHealth / 3) + 1 )
+	}
+	else if ( ent.IsSoldier() && !isPilot )
+	{
+		damageInfo.SetDamage( (maxHealth / 2) + 1 )
 	}
 	else if ( ent.IsPlayer() && damageInfo.GetCustomDamageType() & DF_MAX_RANGE )
 	{

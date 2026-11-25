@@ -843,7 +843,7 @@ function captainSkyScaleOnLand( pod )
 function DropPodAIBlisk( blisk )
 {
 	blisk.EndSignal( "OnDeath" )
-	waitthread DroppodAICaptain( blisk )
+	thread DroppodAICaptain( blisk )
 
 	wait 5.0
 

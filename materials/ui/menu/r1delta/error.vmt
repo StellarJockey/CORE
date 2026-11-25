@@ -1,8 +1,0 @@
-Basic
-{
-	$basetexture		"ui/menu/r1delta/error"
-	$translucent		1
-	$vertexcolor		1
-	$vertexalpha		1
-	$ignorez		    1
-}

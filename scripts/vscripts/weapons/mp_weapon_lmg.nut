@@ -1,4 +1,3 @@
-
 function HasBurnModLmg( weapon )
 {
 	// A weapon whose mod definitions were not populated (e.g. spawned without
@@ -10,11 +9,11 @@ function OnWeaponPrimaryAttack( attackParams )
 {
 	self.EmitWeaponNpcSound( LOUD_WEAPON_AI_SOUND_RADIUS_MP, 0.2 )
 	local damageType = damageTypes.Instant | damageTypes.Bullet
+	if ( self.HasMod( "burn_mod_lmg" ) )
 	if ( HasBurnModLmg( self ) )
 		damageType = damageType | damageTypes.Gibs
 	self.FireWeaponBullet( attackParams.pos, attackParams.dir, 1, damageType )
 }
-
 
 function OnWeaponNpcPrimaryAttack( attackParams )
 {
@@ -38,7 +37,7 @@ function OnWeaponActivate( activateParams )
 	if ( !IsValid_ThisFrame( weaponOwner ) )
 		return
 
-	if ( HasBurnModLmg( self ) )
+	if( self.HasMod( "burn_mod_lmg" ) || self.HasMod( "cyclic_receiver" ) )
 	{
 		SetLoopingWeaponSound_1p3p( "Weapon_LMG_FirstShot", "Weapon_LMG_Loop_Fast", "Weapon_LMG_LoopEnd",
 		                            "Weapon_LMG_FirstShot_3P", "Weapon_LMG_Loop_Fast_3P", "Weapon_LMG_LoopEnd_3P" )
@@ -62,9 +61,4 @@ function OnWeaponActivate( activateParams )
 function OnWeaponDeactivate( deactivateParams )
 {
 	self.ClearLoopingWeaponSound()
-}
-
-function OnClientAnimEvent( name )
-{
-	GlobalClientEventHandler( name )
 }

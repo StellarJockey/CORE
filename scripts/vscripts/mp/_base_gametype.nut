@@ -1,5 +1,5 @@
 //********************************************************************************************
-//	Base Gametype
+//	Base Gametype FO
 //********************************************************************************************
 const DEATH_CHAT_DELAY = 0.3
 IncludeScript("_persistentdata")
@@ -67,13 +67,12 @@ function main()
  		AddClientCommandCallback( "CC_RespawnPlayer", ClientCommand_RespawnPlayer ) //
 
 		AddClientCommandCallback( "PrivateMatchEndMatch", ClientCommand_PrivateMatchEndMatch )
-
 		AddClientCommandCallback( "SwitchMe", ClientCommand_SwitchMe )
 		AddClientCommandCallback( "switchme", ClientCommand_SwitchMe )
-
+		
 		AddCallback_GameStateEnter( eGameState.Playing, GameStart_AutoBalanceCooldown )
 
-		MarkTeamsAsBalanced_Off()
+		MarkTeamsAsBalanced_On()
 
 		level.altTitanBuildTimer <- GetCurrentPlaylistVarInt( "alt_titan_build_timer", 0 ) ? true : false
 
@@ -300,12 +299,13 @@ function ScriptCallback_ShouldEntTakeDamage( ent, damageInfo )
 	local suicideSpectreDamage = ( damageSourceID == eDamageSourceId.suicideSpectre || damageSourceID == eDamageSourceId.suicideSpectreAoE )
 	local attackerOwnsEnt = attacker == ent || ent.GetOwner() == attacker || ent.GetBossPlayer() == attacker
 
+	// CHANGED: Removed !suicideSpectreDamage from this condition
 	if ( attackerOwnsEnt && ( "preventOwnerDamage" in ent.s ) && ent.s.preventOwnerDamage == true && !( damageInfo.GetCustomDamageType() & DF_DOOMED_HEALTH_LOSS ) )
 	{
 		return false
 	}
 
-	if ( damageSourceID != eDamageSourceId.switchback_trap && !suicideSpectreDamage && !attackerOwnsEnt && ShouldPreventFriendlyFire( ent, attacker ) )
+	if ( damageSourceID != eDamageSourceId.switchback_trap && !attackerOwnsEnt && ShouldPreventFriendlyFire( ent, attacker ) )
 	{
 		return false
 	}
@@ -801,18 +801,36 @@ function PlayerOrNPCKilledByEnemy( entity, damageInfo )
 			attacker.SetPersistentVar( "respawnKillInfected", true )
 	}
 
-	// ???: Why are we running score related functions before checking for friendly fire? Answer: Because they all check team internally
+	// ???: Why are we running score related functions before checking for friendly fire?
+	// Answer: Because they all check team internally
+
 	if ( entity.IsPlayer() || (entity.IsTitan() && GAMETYPE == TITAN_BRAWL_AUTO) )
 	{
 		ScoreEvent_PlayerKilled( entity, attacker, damageInfo )
 	}
 	else if ( entity.IsTitan() && entity.IsNPC() && GAMETYPE != TITAN_BRAWL_AUTO )
 	{
+		// Pilot/captain bonus by default; skipped if the occupant fake-ejected
+		if ( GAMETYPE != COOPERATIVE && attacker.IsPlayer() && !ShouldPreventFriendlyFire( entity, attacker )
+			&& !( "npcPilotEjected" in entity.s )
+			&& !( "pilotHandledByExecution" in entity.s )
+			&& damageSourceID != eDamageSourceId.titan_execution )
+		{
+			if ( "pilotIsNPCCaptain" in entity.s )
+				GenericCaptainKillScore( attacker, entity )
+			else if ( "isFO_Titan" in entity.s )
+				GenericNPCPilotKillScore( attacker, entity )
+		}
+
 		if ( !entity.GetDoomedState() )
 			ScoreEvent_TitanKilled( entity, attacker, damageInfo.GetInflictor(), damageSourceID, _GetWeaponNameFromDamageInfo( damageInfo ), damageInfo.GetCustomDamageType() )
 	}
 	else
 	{
+		if ( "isPilotProp" in entity.s && attacker.IsPlayer() && damageSourceID == eDamageSourceId.titan_execution
+			&& !ShouldPreventFriendlyFire( entity, attacker ) )
+			PilotPropTerminated( attacker, entity )
+
 		ScoreEvent_NPCKilled( entity, attacker, damageInfo )
 	}
 
@@ -1040,9 +1058,10 @@ function PostDeathThread( player, damageInfo )
 		else
 			rematchOrigin = player.GetOrigin()
 
-		if(IsValid(player)) {
+		if ( IsValid( player ) )
+		{
 			// don't bother showing message if you killed yourself
-			if( attacker != player && attacker.IsPlayer() )
+			if( attacker != player && IsValid(attacker) && attacker.IsPlayer() )
 				MessageToPlayer( attacker, eEventNotifications.BurnCardRematch, player, null )
 		}
 	}
@@ -2698,12 +2717,15 @@ function CodeCallback_OnPlayerRespawned( player )
 			NotifyClientsOfTeamChange( player, GetOtherTeam(TEAM_MILITIA), TEAM_MILITIA, true ) // Notify clients about the team change
 		}
 	}
+	
+	/*
 	// Standard autobalance for other modes
 	else if ( GetConVarBool( "delta_autoBalanceTeams" ) )
 	{
 		AutoBalancePlayer( player )
 	}
 	// --- End Autobalance on Respawn ---
+	*/
 }
 
 // TODO: dont use this yet, its still missing a lot of checks for if the player is still alive and doing something
@@ -2816,12 +2838,30 @@ function AutoBalancePlayer( player, manualSwitch = false, forceSwitch = false )
 
 			local modelFieldName = "bodymodel_imc"
 			if ( newTeam == TEAM_MILITIA )
+			{
 				modelFieldName = "bodymodel_militia"
+			}
+			else // Assume IMC or other default
+			{
+				modelFieldName = "bodymodel_imc"
+			}
 
 			local correctModelName = GetPlayerSettingsFieldForClassName( classSettings, modelFieldName )
 			if ( correctModelName != null && correctModelName != "" )
 			{
 				printt( "Autobalance: Setting model for player " + player + " (New Team: " + newTeam + ") using " + modelFieldName + " from " + classSettings + " -> " + correctModelName )
+				player.SetModel( correctModelName )
+
+				local skin = 0
+				if ( classSettings.find("female") != null || isTitan )
+					skin = newTeam == TEAM_MILITIA ? 1 : 0
+				else
+					skin = 0 // Assuming non-female models use skin 0 regardless of team, adjust if needed
+
+				player.SetSkin( skin )
+				printt("Autobalance: SET SKIN " + skin)
+
+				RandomizeHead( player )
 
 				ChangeWeaponSkin( player, newTeam )
 				if ( isTitan && IsValid( playerSoul ) )
@@ -2830,7 +2870,7 @@ function AutoBalancePlayer( player, manualSwitch = false, forceSwitch = false )
 						playerSoul.chargeCannon.model.SetTeam( newTeam )
 				}
 			}
-
+			
 			// Fix rodeo viewmodel not changing skin
 			local viewModel = player.GetFirstPersonProxy()
 			if ( viewModel )
@@ -2838,6 +2878,9 @@ function AutoBalancePlayer( player, manualSwitch = false, forceSwitch = false )
 		}
 
 		NotifyClientsOfTeamChange( player, currentTeam, newTeam, ( manualSwitch || forceSwitch ) ) // Notify clients about the team change
+
+		thread PostAutoBalanceThink( player, newTeam )
+				NotifyClientsOfTeamChange( player, currentTeam, newTeam ) // Notify clients about the team change
 
 		local ai = GetNPCArrayByClass( "npc_soldier" )
 		ai.extend( GetNPCArrayByClass( "npc_spectre" ) )
@@ -2902,6 +2945,12 @@ function ShouldAutoBalancePlayer( player, manualSwitch, forceSwitch = false )
 	if ( !GamePlayingOrSuddenDeath() )
 		return false
 
+	if ( GetGameState() >= eGameState.Epilogue )
+		return false
+
+	if ( IsPrivateMatch() && GetPlayerArray().len() == 1 )
+		return false
+
 	if ( GameRules.GetGameMode() == COOPERATIVE )
 		return false
 
@@ -2954,6 +3003,26 @@ function ShouldAutoBalancePlayer( player, manualSwitch, forceSwitch = false )
     }
 
 	return true
+}
+
+function PostAutoBalanceThink( player, newTeam )
+{
+	// Only these two NPCs use the overhead teammate indicator
+	local ai = GetNPCArrayByClass( "npc_soldier" )
+	ai.extend( GetNPCArrayByClass( "npc_spectre" ) )
+
+	foreach( npc in ai )
+	{
+		// Swap hacked Spectres and (probably) conscripted grunts
+		if ( npc.GetBossPlayer() == player )
+			npc.SetTeam( newTeam )
+
+		local eHandle = npc.GetEncodedEHandle()
+
+		Remote.CallFunction_Replay( player, "ServerCallback_UpdateOverheadIconForNPC", eHandle )
+	}
+
+	wait 2
 }
 
 function GameStart_AutoBalanceCooldown()
@@ -3065,24 +3134,24 @@ function AddEntityDestroyedCallback( entity, callbackFunc )
 
 function CodeCallback_WeaponFireInCloak( player )
 {
-	if ( !WeaponCancelsCloak( player.GetActiveWeapon() ) )
-		return
+    if ( !WeaponCancelsCloak( player.GetActiveWeapon() ) )
+        return
 
-	if ( player.IsTitan() )  // Fix timing issue with auto-eject cloak and firing your weapon as a Titan cancelling it.  This assumes we never want cloaked titans!
-		return
+    if ( player.IsTitan() )  // Fix timing issue with auto-eject cloak and firing your weapon as a Titan cancelling it.  This assumes we never want cloaked titans!
+        return
 
-	if ( player.cloakedForever )
-	{
-		player.SetCloakFlicker( 1.0, 2.0 )
-		return
-	}
+    if ( player.cloakedForever )
+    {
+        player.SetCloakFlicker( 1.0, 2.0 )
+        return
+    }
 
-	// Check if we are allowed some cloaked shots based on ability selection
-	if ( player.s.cloakedShotsAllowed > 0 )
-	{
-		player.s.cloakedShotsAllowed--
-		return
-	}
+    // Check if we are allowed some cloaked shots based on ability selection
+    if ( player.s.cloakedShotsAllowed > 0 )
+    {
+        player.s.cloakedShotsAllowed--
+        return
+    }
 
 	DisableCloak( player, 0.5 )
 }
@@ -3187,6 +3256,15 @@ function CodeCallback_OnClientConnectionStarted( player )
 	{
 		player.SetTeam( TEAM_MILITIA )
 	}
+	else
+	{
+		// Read the team we saved in the lobby and force the engine to use it
+		local savedTeam = player.GetPersistentVar( "campaignTeam" )
+		if ( savedTeam == TEAM_IMC || savedTeam == TEAM_MILITIA )
+		{
+			player.SetTeam( savedTeam )
+		}
+	}
 
 	// Added via AddCallback_OnClientConnecting
 	foreach ( callbackInfo in level.onClientConnectingCallbacks )
@@ -3206,6 +3284,19 @@ function CodeCallback_OnClientConnectionStarted( player )
 	thread TrackLastFullHealthTime( player )
 
 	SetPlayerToDefaultViewPoint( player )
+
+	if ( !IsLobby() )
+	{
+        // Prevent the saved lobby team from overriding the Cooperative Militia team force
+        if ( GameRules.GetGameMode() != COOPERATIVE )
+        {
+            local savedTeam = player.GetPersistentVar( "campaignTeam" )
+            if ( savedTeam == TEAM_IMC || savedTeam == TEAM_MILITIA )
+            {
+                player.SetTeam( savedTeam )
+            }
+        }
+    }
 }
 
 
@@ -3441,6 +3532,12 @@ function CodeCallback_OnClientConnectionCompleted( player )
 
 	if ( Flag( "CinematicIntro" ) && GetGameState() <= eGameState.Prematch )
 		return
+
+    // Skip respawn if this is a solo private match in prematch
+    if ( IsPrivateMatch() && GetPlayerArray().len() == 1 && GetGameState() == eGameState.Prematch )
+    {
+        return
+    }
 
 	if ( GetGameState() == eGameState.Playing || GetGameState() == eGameState.Prematch || GetGameState() == eGameState.SuddenDeath )
 		DecideRespawnPlayer( player )
@@ -3712,12 +3809,12 @@ if ( !reloadingScripts )
 function CodeCallback_GetWeaponDamageSourceId( weapon )
 {
 	local classname = weapon.GetClassname()
-
-	//Assert( classname in getconsttable().eDamageSourceId, classname + " not added to eDamageSourceId enum" )
-	//if ( classname in level.megaMaps )
-	//{
-	//	classname = level.megaMaps[ classname ]
-	//}
+	
+	/*
+	if ( classname == "mp_weapon_smoke_grenade" )
+		classname = "mp_titanability_smoke"
+	*/
+	
 	local damageSourceInt = getconsttable().eDamageSourceId[ classname ]
 
 	Assert( damageSourceInt in damageSourceStrings, classname + " not added to damageSourceStrings table" )

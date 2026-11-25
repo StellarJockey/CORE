@@ -1,6 +1,6 @@
 //********************************************************************************************
 //
-//	MP Game Settings File
+//	MP Game Settings File FO
 //	Designers: put variables you want to expose to everyone in this file for easy tweaking
 //
 //********************************************************************************************
@@ -86,23 +86,7 @@ COOP_STAR_SCORE_REQUIREMENT[ "mp_zone_18" ]					<- [ 615, 1235, 1855 ]
 COOP_STAR_SCORE_REQUIREMENT[ "mp_wargames" ]				<- [ 570, 1145, 1715 ]
 COOP_STAR_SCORE_REQUIREMENT[ "mp_swampland" ]				<- [ 655, 1310, 1970 ]
 
-COOP_STAR_SCORE_REQUIREMENT[ "mp_nest2" ]					<- [ 860, 1720, 2580 ]
-COOP_STAR_SCORE_REQUIREMENT[ "mp_blackwater_canal" ]		<- [ 610, 1225, 1840 ]
-COOP_STAR_SCORE_REQUIREMENT[ "mp_colony02" ]				<- [ 570, 1145, 1715 ]
-COOP_STAR_SCORE_REQUIREMENT[ "mp_complex3" ]				<- [ 710, 1420, 2130 ]
-COOP_STAR_SCORE_REQUIREMENT[ "mp_eden" ]					<- [ 935, 1875, 2810 ]
-COOP_STAR_SCORE_REQUIREMENT[ "mp_forwardbase_kodai" ]		<- [ 645, 1295, 1945 ]
-COOP_STAR_SCORE_REQUIREMENT[ "mp_glitch" ]		<- [ 750, 1500, 2250 ]
-COOP_STAR_SCORE_REQUIREMENT[ "mp_grave" ]		<- [ 750, 1505, 2255 ]
-COOP_STAR_SCORE_REQUIREMENT[ "mp_homestead" ]		<- [ 660, 1325, 1990 ]
-//COOP_STAR_SCORE_REQUIREMENT[ "mp_lf_deck" ]		<- [ 0, ,  ]
-//COOP_STAR_SCORE_REQUIREMENT[ "mp_lf_meadow" ]		<- [ 0, ,  ]
-//COOP_STAR_SCORE_REQUIREMENT[ "mp_lf_stacks" ]		<- [ 0, ,  ]
-//COOP_STAR_SCORE_REQUIREMENT[ "mp_lf_township" ]		<- [ 0, ,  ]
-//COOP_STAR_SCORE_REQUIREMENT[ "mp_lf_traffic" ]		<- [ 0, ,  ]
-//COOP_STAR_SCORE_REQUIREMENT[ "mp_lf_uma" ]		<- [ 0, ,  ]
-COOP_STAR_SCORE_REQUIREMENT[ "mp_relic02" ]		<- [ 540, 1085, 1625 ]
-COOP_STAR_SCORE_REQUIREMENT[ "mp_thaw" ]		<- [ 580, 1160, 1740 ]
+COOP_STAR_SCORE_REQUIREMENT[ "mp_nest2" ]				<- [ 860, 1720, 2580 ]
 
 COOP_STAR_SCORE_REQUIREMENT[ "default" ]					<- [ 10000, 10000, 10000 ]
 
@@ -558,6 +542,11 @@ const POINTVALUE_KILL_HEAVY_TURRET					= 50		// Player kills a heavy turret
 const POINTVALUE_KILL_LIGHT_TURRET					= 25		// Player kills a light turret
 const POINTVALUE_KILL_DRONE							= 50		// Player kills a hover drone ( dropped by an operator )
 
+// Frontier Overhaul AI
+const POINTVALUE_KILL_COMBAT_DRONE					= 20
+const POINTVALUE_KILL_GRUNT_CAPTAIN					= 30
+const POINTVALUE_KILL_GUNSHIP						= 200
+
 //coop specific minions
 const POINTVALUE_COOP_KILL_SUICIDE_SPECTRE				= 15
 const POINTVALUE_COOP_KILL_SNIPER_SPECTRE				= 40
@@ -708,7 +697,7 @@ const POINTVALUE_KILLED_RANKED_PILOT				= 100
 const POINTVALUE_KILLED_TOP_RANKED_PILOT			= 200
 const POINTVALUE_KILLED_TOP_PERF_PILOT				= 200
 
-const POINTVALUE_KILLED_DOGFIGHTER					= 100
+const POINTVALUE_KILLED_DOGFIGHTER					= 200 // 100
 
 const POINTVALUE_KILL_ANGELCITY_SEARCHDRONE			= 5
 const POINTVALUE_KILL_FLYER							= 100
@@ -882,7 +871,7 @@ const STRIKE_DISPLAYNAME 					= "SATELLITE STRIKE"		// Name displayed on operato
 //--------------------------------------------------
 
 const OBITUARY_ENABLED_PLAYERS				= 1
-const OBITUARY_ENABLED_NPC					= 0
+const OBITUARY_ENABLED_NPC					= 1 // 0
 const OBITUARY_ENABLED_NPC_TITANS			= 1
 
 const OBITUARY_DURATION						= 6.0					// Amount of seconds an obituary stays on the screen
@@ -949,7 +938,7 @@ const CAPTURE_POINT_SLIDE_OUT_TIME			= 0.1
 const CAPTURE_POINT_MINIMAP_ICON_SCALE		= 0.15
 const CAPTURE_POINT_TITANS_BREAK_CONTEST	= true
 
-const CAPTURE_POINT_AI_CAP_POWER			= 0.25				// Power of an AI towards capturing a hardpoint
+const CAPTURE_POINT_AI_CAP_POWER			= 1.0 //0.25		// Power of an AI towards capturing a hardpoint
 const CAPTURE_POINT_PLAYER_CAP_POWER		= 0.5				// Power of a Player towards capturing a hardpoint
 const CAPTURE_POINT_MAX_CAP_POWER			= 3.0				// max total combined cap power
 

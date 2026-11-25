@@ -1,9 +1,16 @@
-
+// FO
 const MAXNODES_PER_SNIPERSPOT 	= 4
 const MAX_SNIPERSPOTS 			= 30 // for speed of iterating through the array
 const SNIPERSPOT_RADIUSCHECK 	= 200
 const SNIPERSPOT_HEIGHTCHECK 	= 160
 const SNIPERNODE_TOOCLOSE_SQR	= 2500//50x50
+
+
+::SNIPER_WEAPON_POOL <- [
+	"mp_weapon_dmr",
+	"mp_weapon_sr_valkyrie",
+	"mp_weapon_sniper",
+]
 
 function main()
 {
@@ -35,22 +42,64 @@ function MakeSniperSpectre( sniper )
 	sniper.Minimap_SetZOrder( 10 )
 	sniper.SetSubclass( eSubClass.sniperSpectre )
 
-	sniper.kv.additionalequipment = "mp_weapon_dmr"
-	sniper.TakeActiveWeapon()
-	sniper.GiveWeapon( "mp_weapon_dmr", [ "scope_4x" ] )
+	sniper.s.recentDamageHistory <- []
+	local weapon = SNIPER_WEAPON_POOL[ RandomInt( SNIPER_WEAPON_POOL.len() ) ]
 
+	sniper.kv.additionalequipment = weapon
+	sniper.TakeActiveWeapon()	
+	sniper.GiveWeapon( weapon, [ "scope_6x" ] )
 	sniper.s.atWeapon <- "mp_weapon_defender"
 	sniper.s.useRPGPreference = RPG_USE_ALWAYS
 
 	sniper.Signal( "Stop_SimulateGrenadeThink" )
 	sniper.TakeOffhandWeapon( 0 )
-	sniper.StayPut( true )
 	sniper.AllowSpectreTraverse( true )
 
-	sniper.s.sniperNode <- null
-	thread Sniper_FreeSniperNodeOnDeath( sniper )
+	if ( GameRules.GetGameMode() == COOPERATIVE )
+	{
+		sniper.s.sniperNode <- null
+		sniper.s.assaultPoint <- CreateAssaultPoint()
+		thread Sniper_FreeSniperNodeOnDeath( sniper )
+		thread Sniper_MoveToNewLocation( sniper )
+	}
+	// Start the custom cloak behavior loop
+	thread Sniper_CloakThink( sniper )
 }
 
+function Sniper_CloakThink( sniper )
+{
+    sniper.EndSignal( "OnDeath" )
+    sniper.EndSignal( "OnDestroy" )
+
+    // Script-side state tracking
+    sniper.s.cloaked <- true
+
+    SniperCloak( sniper )
+
+    while ( true )
+    {
+        local enemy = sniper.GetEnemy()
+        local shouldDecloak = false
+
+        if ( IsValid( enemy ) && IsAlive( enemy ) && sniper.CanSee( enemy ) )
+        {
+            shouldDecloak = true
+        }
+
+        if ( shouldDecloak && sniper.s.cloaked )
+        {
+            SniperDeCloak( sniper )
+            sniper.s.cloaked = false
+        }
+        else if ( !shouldDecloak && !sniper.s.cloaked )
+        {
+            SniperCloak( sniper )
+            sniper.s.cloaked = true
+        }
+
+        wait 0.25
+    }
+}
 
 /************************************************************************************************\
 
@@ -212,8 +261,9 @@ function SniperCloak( sniper )
 	if ( !sniper.CanCloak() )
 		return
 
+	sniper.s.cloaked <- true  // Added state tracking here
 	sniper.kv.allowshoot = 0
-	sniper.SetCloakDuration( 3.0, -1, 0 )
+	sniper.SetCloakDuration( 2.0, -1, 0 )
 	sniper.Minimap_Hide( TEAM_IMC, null )
 	sniper.Minimap_Hide( TEAM_MILITIA, null )
 }
@@ -224,8 +274,9 @@ function SniperDeCloak( sniper )
 	if ( !IsAlive( sniper ) )
 		return
 
+	sniper.s.cloaked <- false // Added state tracking here
 	sniper.kv.allowshoot = 1
-	sniper.SetCloakDuration( 0, 0, 1.5 )
+	sniper.SetCloakDuration( 0, 0, 1.0 )
 	sniper.Minimap_AlwaysShow( TEAM_IMC, null )
 	sniper.Minimap_AlwaysShow( TEAM_MILITIA, null )
 }

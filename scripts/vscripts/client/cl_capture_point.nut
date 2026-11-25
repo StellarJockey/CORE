@@ -29,8 +29,6 @@ const CAPTURE_POINT_UI_UPDATE = "CapturePointUIUpdate"
 
 function main()
 {
-	level.hardpointIDsToOwner <- {}
-
 	Globalize( CapturePoint_AddPlayer )
 	Globalize( ShowHardpointIcons )
 	Globalize( HideHardpointIcons )
@@ -58,6 +56,7 @@ function main()
 	AddCreatePilotCockpitCallback( CapturePointHudInit )
 	AddCreateTitanCockpitCallback( CapturePointHudInit )
 
+	level.hardpointIDsToOwner <- {}
 }
 
 // INITIALIZATION
@@ -147,11 +146,10 @@ function InitializeHardpoint( hardpoint )
 	else
 		hardpoint.s.worldIcon.Show()
 
-	if ( "hardpointIDsToOwner" in level && !( index in level.hardpointIDsToOwner ) )
+	if ( !( index in level.hardpointIDsToOwner ) )
 		level.hardpointIDsToOwner[index] <- null
 
-	if ( "hardpointIDsToOwner" in level )
-		level.hardpointIDsToOwner[ index ] = hardpoint.GetTeam()
+	level.hardpointIDsToOwner[ index ] = hardpoint.GetTeam()
 
 	//---------------------------------------------
 	// Set up data about the hardpoint
@@ -322,14 +320,7 @@ function HardpointChanged( hardpoint )
 		return
 
 	local index = hardpoint.GetHardpointID()
-	if ( index < 0 )
-		return
-
-	if ( "hardpointIDsToOwner" in level && !( index in level.hardpointIDsToOwner ) )
-		level.hardpointIDsToOwner[index] <- null
-
-	if ( "hardpointIDsToOwner" in level )
-		level.hardpointIDsToOwner[ index ] = hardpoint.GetTeam()
+	level.hardpointIDsToOwner[ index ] = hardpoint.GetTeam()
 
 	local player = GetLocalViewPlayer()
 	if ( !IsValid( player ) )
@@ -708,17 +699,56 @@ function OnHardpointCockpitCreated( cockpit, panel, scoreGroup )
 {
 	Assert( GameModeHasCapturePoints() )
 
-	cockpit.s.hardpointStatus_a <- scoreGroup.CreateElement( "ScoresHardpointFill_A", panel )
-	cockpit.s.hardpointStatusBGA <- scoreGroup.CreateElement( "ScoresHardpointBg_A", panel )
-	cockpit.s.hardpointStatusFG_a <- scoreGroup.CreateElement( "ScoresHardpointFg_A", panel )
+	// Guard 1: Skip if this cockpit instance already has hardpoint elements
+	if ( "hardpointStatus_a" in cockpit.s )
+		return
 
-	cockpit.s.hardpointStatus_b <- scoreGroup.CreateElement( "ScoresHardpointFill_B", panel )
-	cockpit.s.hardpointStatusBGB <- scoreGroup.CreateElement( "ScoresHardpointBg_B", panel )
-	cockpit.s.hardpointStatusFG_b <- scoreGroup.CreateElement( "ScoresHardpointFg_B", panel )
+	local vguiState = cockpit.s.mainVGUI.s
 
-	cockpit.s.hardpointStatus_c <- scoreGroup.CreateElement( "ScoresHardpointFill_C", panel )
-	cockpit.s.hardpointStatusBGC <- scoreGroup.CreateElement( "ScoresHardpointBg_C", panel )
-	cockpit.s.hardpointStatusFG_c <- scoreGroup.CreateElement( "ScoresHardpointFg_C", panel )
+	// Guard 2: If the underlying VGUI panel already has the elements created, reuse them
+	if ( "hardpointStatus_a" in vguiState )
+	{
+		cockpit.s.hardpointStatus_a <- vguiState.hardpointStatus_a
+		cockpit.s.hardpointStatusBGA <- vguiState.hardpointStatusBGA
+		cockpit.s.hardpointStatusFG_a <- vguiState.hardpointStatusFG_a
+
+		cockpit.s.hardpointStatus_b <- vguiState.hardpointStatus_b
+		cockpit.s.hardpointStatusBGB <- vguiState.hardpointStatusBGB
+		cockpit.s.hardpointStatusFG_b <- vguiState.hardpointStatusFG_b
+
+		cockpit.s.hardpointStatus_c <- vguiState.hardpointStatus_c
+		cockpit.s.hardpointStatusBGC <- vguiState.hardpointStatusBGC
+		cockpit.s.hardpointStatusFG_c <- vguiState.hardpointStatusFG_c
+
+		cockpit.s.captureBarGroup <- HudElementGroup( "captureBar" )
+		thread CapturePointUpdateCockpitThread( cockpit )
+		return
+	}
+
+	// First-time creation on this panel
+	vguiState.hardpointStatus_a <- scoreGroup.CreateElement( "ScoresHardpointFill_A", panel )
+	vguiState.hardpointStatusBGA <- scoreGroup.CreateElement( "ScoresHardpointBg_A", panel )
+	vguiState.hardpointStatusFG_a <- scoreGroup.CreateElement( "ScoresHardpointFg_A", panel )
+
+	vguiState.hardpointStatus_b <- scoreGroup.CreateElement( "ScoresHardpointFill_B", panel )
+	vguiState.hardpointStatusBGB <- scoreGroup.CreateElement( "ScoresHardpointBg_B", panel )
+	vguiState.hardpointStatusFG_b <- scoreGroup.CreateElement( "ScoresHardpointFg_B", panel )
+
+	vguiState.hardpointStatus_c <- scoreGroup.CreateElement( "ScoresHardpointFill_C", panel )
+	vguiState.hardpointStatusBGC <- scoreGroup.CreateElement( "ScoresHardpointBg_C", panel )
+	vguiState.hardpointStatusFG_c <- scoreGroup.CreateElement( "ScoresHardpointFg_C", panel )
+
+	cockpit.s.hardpointStatus_a <- vguiState.hardpointStatus_a
+	cockpit.s.hardpointStatusBGA <- vguiState.hardpointStatusBGA
+	cockpit.s.hardpointStatusFG_a <- vguiState.hardpointStatusFG_a
+
+	cockpit.s.hardpointStatus_b <- vguiState.hardpointStatus_b
+	cockpit.s.hardpointStatusBGB <- vguiState.hardpointStatusBGB
+	cockpit.s.hardpointStatusFG_b <- vguiState.hardpointStatusFG_b
+
+	cockpit.s.hardpointStatus_c <- vguiState.hardpointStatus_c
+	cockpit.s.hardpointStatusBGC <- vguiState.hardpointStatusBGC
+	cockpit.s.hardpointStatusFG_c <- vguiState.hardpointStatusFG_c
 
 	cockpit.s.hardpointStatus_a.Show()
 	cockpit.s.hardpointStatusBGA.Show()

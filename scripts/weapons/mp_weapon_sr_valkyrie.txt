@@ -16,9 +16,9 @@ WeaponData
 	"minimap_reveal_distance"						"32000"
 
 	// Menu Stats
-	"stat_damage" 									"100"
+	"stat_damage" 									"97"
 	"stat_range"  									"100"
-	"stat_accuracy"   								"50"
+	"stat_accuracy"   								"75"
 	"stat_rof"										"23"
 
 	// Models
@@ -30,7 +30,7 @@ WeaponData
 
 	// Effects
 	"tracer_effect"   								"weapon_tracers_sniper"
-	"tracer_effect_first_person"  					"" //weapon_tracers_sniper
+	// "tracer_effect_first_person"  					"weapon_tracers_sniper"
 	"impact_effect_table" 							"titan_bullet"
 	// "projectile_trail_effect_0" 					"garand_trail_smoke"
 	"projectile_do_predict_impact_effects"			"0"
@@ -59,13 +59,13 @@ WeaponData
 	"damage_type" 									"bullet"
 	"damage_near_distance"							"2000"
 	"damage_far_distance" 							"4500"
-	"damage_near_value"   							"150"
-	"damage_far_value"								"150"
+	"damage_near_value"   							"160"
+	"damage_far_value"								"160"
 	"damage_near_value_titanarmor"					"200"
 	"damage_far_value_titanarmor" 					"200"
 	"damage_rodeo" 									"1000" // 500
 
-	"damage_headshot_scale"							"1.6"
+	"damage_headshot_scale"							"2.0" // "1.6"
 	"damage_torso_scale"							"1.4"
 	"damage_arm_scale"								"1.0"
 	"damage_leg_scale"								"1.0"
@@ -79,17 +79,17 @@ WeaponData
 	// Damage - When Used by NPCs
 	"npc_damage_near_distance"						"2000"
 	"npc_damage_far_distance" 						"3500"
-	"npc_damage_near_value"   						"99"
-	"npc_damage_far_value"							"99"
+	"npc_damage_near_value"   						"160"
+	"npc_damage_far_value"							"160"
 	"npc_damage_near_value_titanarmor"				"200"
 	"npc_damage_far_value_titanarmor" 				"200"
 
 	"impulse_force"   								"10"
 
 	// Ammo
-	"ammo_stockpile_max"							"42" // 60
+	"ammo_stockpile_max"							"66" // 60
 	"ammo_clip_size"   								"6"
-	"ammo_default_total"							"42" // 60
+	"ammo_default_total"							"66" // 60
 
 	// Behavior
 	"fire_rate"   									"2"
@@ -139,7 +139,7 @@ WeaponData
 	"spread_air_hip"	   							"12"
 	"spread_air_ads"   								".15"
 
-	"spread_npc"  									"2"
+	"spread_npc"  									"0.2"
 
 	// View Kick
 	"viewkick_spring" 								"sniper"
@@ -186,15 +186,24 @@ WeaponData
 	"bob_yaw" 										"1"
 	"bob_roll"										"-0.75"
 
+	// Bob_Zoomed
+	//"bob_cycle_time_zoomed"  						"0.45"
+	//"bob_vert_dist_zoomed"   						"0.01"
+	//"bob_horz_dist_zoomed"   						"0.01"
+	//"bob_max_speed_zoomed"   						"150"
+	//"bob_pitch_zoomed"   							"0.002"
+	//"bob_yaw_zoomed" 								"-.002"
+	//"bob_roll_zoomed"								".002"
+
 	// View Drift
-	"viewdrift_hipfire_stand_scale_pitch" 			"0.325"
-	"viewdrift_hipfire_crouch_scale_pitch"			"0.275"
-	"viewdrift_hipfire_air_scale_pitch"   			"0.5"
-	"viewdrift_hipfire_stand_scale_yaw"   			"0.12"
-	"viewdrift_hipfire_crouch_scale_yaw"  			"0.10"
-	"viewdrift_hipfire_air_scale_yaw" 				"0.22"
-	"viewdrift_hipfire_speed_pitch"   				"0.6"
-	"viewdrift_hipfire_speed_yaw" 					"1.22"
+	"viewdrift_hipfire_stand_scale_pitch" 			"0.0" // "0.325"
+	"viewdrift_hipfire_crouch_scale_pitch"			"0.0" // "0.275"
+	"viewdrift_hipfire_air_scale_pitch"   			"0.0" // "0.5"
+	"viewdrift_hipfire_stand_scale_yaw"   			"0.0" // "0.12"
+	"viewdrift_hipfire_crouch_scale_yaw"  			"0.0" // "0.10"
+	"viewdrift_hipfire_air_scale_yaw" 				"0.0" // "0.22"
+	"viewdrift_hipfire_speed_pitch"   				"0.0" // "0.6"
+	"viewdrift_hipfire_speed_yaw" 					"0.0" // "1.22"
 
 	"viewdrift_ads_stand_scale_pitch" 				"0.25" 
 	"viewdrift_ads_crouch_scale_pitch"				"0.10" 
@@ -241,6 +250,21 @@ WeaponData
 	"sway_turn_up_rotate_pitch"   					"1"
 	"sway_turn_down_rotate_pitch" 					"-1"
 
+	// Zoomed Sway
+	"sway_rotate_attach_zoomed"						"SWAY_ROTATE_ZOOMED"
+	"sway_rotate_attach_blend_time_zoomed"			"0.2"
+	"sway_rotate_gain_zoomed"						"12"
+
+	"sway_min_yaw_zoomed"							"-0.03"
+	"sway_max_yaw_zoomed"							"0.03"
+	"sway_turn_left_rotate_yaw_zoomed"				"-0.085"
+	"sway_turn_right_rotate_yaw_zoomed"				"0.085"
+
+	"sway_min_pitch_zoomed"  						"-0.01"
+	"sway_max_pitch_zoomed"  						"0.01"
+	"sway_turn_up_rotate_pitch_zoomed"				"0.09"
+	"sway_turn_down_rotate_pitch_zoomed"			"-0.09"
+
 	// NPC
 	"proficiency_poor_spreadscale"					"7.0"
 	"proficiency_poor_bias"   						"0.75"
@@ -262,6 +286,7 @@ WeaponData
 	"npc_max_burst"									"1"
 	"rest_time_between_bursts_min"					"2.0"
 	"rest_time_between_bursts_max"					"3.0"
+	"npc_vortex_block"								"1"
 
 	"smart_ammo_search_angle" 						"20"
 	"smart_ammo_search_distance"  					"5000"
@@ -351,10 +376,17 @@ WeaponData
 			"bodygroup5_set"					"1"
 			"fire_sound_1_player_1p"			"SR_Valkyrie.Fire_Suppressed"
 			"fire_sound_1_player_3p"			"SR_Valkyrie.Fire_Suppressed"
-			"fire_sound_1_npc"					"SR_Valkyrie.Fire_Suppressed"
 
-			"damage_near_value"   				"110"
-			"damage_far_value"					"110"
+			"damage_near_value"   				"140" // "125"
+			"damage_far_value"					"140" // "125"
+			"damage_near_distance"				"*0.9"
+			"damage_far_distance"				"*0.9"
+
+			"fire_sound_1_npc"					"SR_Valkyrie.Fire_Suppressed"
+			"npc_damage_near_value"   			"125"
+			"npc_damage_far_value"				"125"
+			"npc_damage_near_distance"			"*0.9"
+			"npc_damage_far_distance"			"*0.9"
 
 			//"rumble"  						"4"
 			"tracer_effect"   					"weapon_tracers_pistol"
@@ -392,18 +424,18 @@ WeaponData
 			"crosshair_index"								"1"
 			"rechamber_time"  								"*0.7"
 
-			"anim_alt_idleAttack"	"0"
-			"bodygroup3_set"		"0"
-			"bodygroup2_set"		"1"
-			"ads_fov_zoomfrac_start"	"0.0"
-			"ads_fov_zoomfrac_end"		"1.0"
-			"aimassist_disable_ads"		"0"
-			"gamepad_use_yaw_speed_for_pitch_ads"	"0"
-			"zoom_angle_shift_pitch"	"0"
-			"zoom_angle_shift_yaw"		"0"
-			"zoom_fov"				"17.68" //4.5 zoom
-			"is_burn_mod"		"1"
-		}
+			"anim_alt_idleAttack"							"0"
+			"bodygroup3_set"								"0"
+			"bodygroup2_set"								"1"
+			"ads_fov_zoomfrac_start"						"0.0"
+			"ads_fov_zoomfrac_end"							"1.0"
+			"aimassist_disable_ads"							"0"
+			"gamepad_use_yaw_speed_for_pitch_ads"			"0"
+			"zoom_angle_shift_pitch"						"0"
+			"zoom_angle_shift_yaw"							"0"
+			"zoom_fov"										"17.68" //4.5 zoom
+			"is_burn_mod"									"1"
+		}	
 	}
 
 	CrosshairData

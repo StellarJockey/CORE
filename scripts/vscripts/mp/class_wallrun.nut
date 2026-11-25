@@ -1,4 +1,4 @@
-function main()
+function main() // FO
 {
 	Globalize( Wallrun_AddPlayer )
 	Globalize( Wallrun_OnPlayerSpawn )
@@ -336,12 +336,12 @@ function AdjustDamageForRodeoPlayers( player, damageInfo, attacker )
 
 	local playerParent = titanSoulRodeoed.GetTitan()
 
-	// dont let npcs hurt rodeo player
+	/* // dont let npcs hurt rodeo player
 	if ( attacker.IsNPC() && attacker != playerParent && damageInfo.GetDamageSourceIdentifier() != eDamageSourceId.mp_titanability_smoke )
 	{
-		damageInfo.SetDamage( 0 )
+		damageInfo.SetDamage( 1 )
 		return
-	}
+	} */
 
 	local damage = damageInfo.GetDamage()
 

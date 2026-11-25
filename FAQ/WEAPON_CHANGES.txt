@@ -1,0 +1,140 @@
+//////////////////////////////
+////// PILOT PRIMARIES ///////
+//////////////////////////////
+
+SUPPRESSORS:
+* Suppressors have been tweaked across the board to be more viable, especially with secondaries and snipers
+* Getting a kill with a suppressor on an enemy who doesn't have line of sight on you will reward you a +20xp "Stealth Bonus"
+
+R101-C CARBINE:
+* Small increase to ADS recoil
+* Small increase to weapon spread
+
+EVA-8 SHOTGUN:
+* Run-n-Gun kit now applies
+* Slightly buffed the range for the player
+* Headshots have been enabled
+* Leadwall mod reduces damage by only 9% instead of 17% (i.e. the Twin-B version)
+* Added a Full-Auto mod (fire rate is a bit slower than the Burn Card version)
+* Added a Pump-Action mod that does more damage with higher range but with a slower fire rate
+
+R1-S BURRELL SMG:
+* Restored cut SMG version of the R101. Still experimenting with its role and numbers
+* Temporarily removed because it will actually break the game super hard if you try and use it outside the mod
+
+M-18 VOLT SMG:
+* Added the Volt SMG from Titanfall 2
+
+HEMLOK:
+* Reduced weapon spread
+
+VALKYRIE:
+* Slight damage buff to headshots (x2 instead of x1.4)
+* Added the dark mode skin, since its base model is not very detailed or interesting. Black makes everything better >:)
+
+SPITFIRE:
+* Reduced ADS time from 0.7 sec to 0.5 sec
+* Range buff
+* Added Cyclic Receiver mod (ADS and reload are slower than the Burn Card version)
+
+BOCEK BOW:
+* Added gearhead's port of the Bocek from Apex Legends
+
+V-47 FLATLINE:
+* Added the Flatline assault rifle from Titanfall 2
+
+KRABER:
+* Added Anti-Titan Rounds mod (has less ammo than the burn card version)
+
+//////////////////////////////
+///// PILOT SECONDARIES //////
+//////////////////////////////
+
+P2011:
+* Will 3-shot Pilots and Grunts at close range instead of 4
+* Burn card version adds an 3 extra rounds to your mag
+
+RE-45:
+* Will 5-shot Pilots at close range instead of 6
+* Starburst now has slightly reduced recoil, better fire rate, and +5 extra mag size
+
+WINGMAN:
+* Added Gunslinger mod
+
+TWIN-B:
+* Does enough damage to one-shot grunt captains (250 health) at close range 
+* Added Double Tap mod to fire both barrels (almost) at once
+
+WINGMAN ELITE:
+* Added Wingman Elite: a projectile version of the regular Wingman with HCOG sights
+
+////////////////////////////////////////
+////// PILOT ORDNANCE + TACTICAL ///////
+////////////////////////////////////////
+
+THROWING KNIFE:
+* Added the knife from Gun Game as a new Pilot Ordnance, ideal for stealthy builds
+
+ELECTRIC SMOKE GRENADE:
+* Added the Electric Smoke Grenade as a new Pilot Ordnance
+
+ARC GRENADES:
+* Will only insta-kill grunts, takes two to kill NPC Pilots and Grunt Captains
+
+DEPLOYABLE COVER:
+* Added Deployable Cover as a new Pilot Tactical
+
+HOLOGRAM:
+* Added Hologram as a new Pilot Tactical
+
+ENHANCED PARKOUR KIT:
+* You take 50% less damage while doing parkour
+
+STEALTH KIT:
+* NPC Titans won't pop Electric Smoke until you shoot
+
+//////////////////////////////
+///// ANTI-TITAN WEAPONS /////
+//////////////////////////////
+
+ARCHER:
+* Added Guided Missile mod
+
+MAG LAUNCHER:
+* Small damage buff
+* Added an Extended Mag mod
+
+CHARGE RIFLE:
+* Added Charge Hack mod
+
+//////////////////////////////
+////// TITAN PRIMARIES ///////
+//////////////////////////////
+
+QUAD ROCKET:
+* Damage buff against Titans
+
+WYS-0404:
+* Does a bit more damage against Titans
+* Small burst delay decrease
+* Added the Shredder Rounds mod; increases fire rate and damage, faster reload, but range is reduced
+
+TRIPLE THREAT:
+* Got rid of the fire rate nerf for the hydraulic launcher, the charge time feels like its enough of a fire rate debuff
+
+AG-8 THUNDERBOLT:
+* Ammo is no longer infinite, will passively regenerate when not firing
+* Bullets are no longer electrified, no more fire rate ramp-up
+* Gun will "overheat" if ammo depletes, locking you out of firing until all ammo has regenerated
+* 50% movement speed penalty is applied when firing
+* Added the dark mode skin, since its base skin doesn't fit TF1's art style
+
+//////////////////////////////
+/////// TITAN ORDNANCE ///////
+//////////////////////////////
+
+SLAVED WARHEADS:
+* Small damage buff
+
+SHOULDER TURRET:
+* Restored the Titan Shoulder Turret

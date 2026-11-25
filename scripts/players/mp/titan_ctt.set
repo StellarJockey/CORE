@@ -46,7 +46,9 @@
 	{
 		name 			"titan_ctt"
 
-		health			10000 // 10500
+		health			10500 	// 10500 is the default Ogre, maybe 13000 for ctt?
+								// 8000 is Atlas   (-2500)
+								// 5500 is Stryder (-2500)
 
 		ClassMods
 		{

@@ -1,4 +1,4 @@
-
+// FO
 const TITAN_USE_HOLD_PROMPT = "Hold [USE] to Pilot||Hold [USE] to Rodeo"
 const TITAN_USE_PRESS_PROMPT = "Press [USE] to Pilot||Press [USE] to Rodeo"
 
@@ -883,7 +883,7 @@ function SpawnNPCTitan( table )
 	npcTitan.SetAllowJump( false )	// need to setup traverse animations
 	npcTitan.StayPut( true )
 	npcTitan.SetAISettings( "titan" )
-	npcTitan.SetEngagementDistVsStrong( 0, 4000 )
+	npcTitan.SetEngagementDistVsStrong( 0, 6000 )
 
 	ApplyTitanColor(npcTitan, settings)
 
@@ -922,6 +922,31 @@ function SetTitanAccuracyAndProficiency( npcTitan, lethality )
 			case eAILethality.TD_Medium:
 				accuracyMultiplier = 0.75
 				weaponProficiency = 2
+				break
+
+			case eAILethality.High:
+				accuracyMultiplier = 2.0
+				weaponProficiency = 3
+				break
+
+			case eAILethality.VeryHigh:
+				accuracyMultiplier = 3.0
+				weaponProficiency = 4
+				break
+		}
+	}
+	else
+	{
+		switch ( lethality )
+		{
+			case eAILethality.High:
+				accuracyMultiplier = 2.0
+				weaponProficiency = 3
+				break
+
+			case eAILethality.VeryHigh:
+				accuracyMultiplier = 4
+				weaponProficiency = 4
 				break
 		}
 	}

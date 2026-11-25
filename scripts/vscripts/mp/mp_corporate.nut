@@ -701,7 +701,15 @@ function SpectreSuicideBehavior( spectre, spawnerTable = null )
 	//--------------------------------------------------------------
 	// Spectre properties to make them do unarmed chase/search
 	//--------------------------------------------------------------
-	spectre.s.suicideBehavior <- 1
+	spectre.s.suicideBehavior <- {}
+	spectre.s.suicideBehavior.triggerExplodeDist 		<- null
+	spectre.s.suicideBehavior.triggerExplodeDistSqr 	<- null
+	spectre.s.suicideBehavior.explodeTitanDmg 			<- null
+	spectre.s.suicideBehavior.explodePilotDmg 			<- null
+	spectre.s.suicideBehavior.explodeRadiusFalloffMax 	<- null
+	spectre.s.suicideBehavior.explodeRadiusFullDamage 	<- null
+	ResetSuicideSpectreExplosionData( spectre )
+
 	spectre.s.state <- SPECTRE_STATE_SEARCHING
 	spectre.s.droneType <- SPECTRE_TYPE_AI
 
@@ -1463,10 +1471,10 @@ function SpectreExplosionDamage( spectre )
 	// Do token damage to players
 	//-----------------------------------
 	RadiusDamage( spectre.GetOrigin(),	// origin
-		15,								// titan damage
-		15,								// pilot damage
-		SPECTRE_EXPLOSION_RADIUS,		// radiusFalloffMax
-		0,								// radiusFullDamage
+		750,								// titan damage
+		100,								// pilot damage
+		400,								// radiusFalloffMax
+		300,								// radiusFullDamage
 		spectre, 						// owner
 		eDamageSourceId.spectre_melee,  // damage source id
 		true,							// alive only
@@ -3837,12 +3845,36 @@ function DoEnding()
 
 	wait 0.5 // Need to give rodeo threads a chance to terminate rodeo
 
-	//set the players view to spectators
-	GM_SetObserverFunc( EndingObserverFunc )
+	local npcs = GetNPCArray()
+    foreach( npc in npcs )
+    {
+        if ( !IsValid( npc ) )
+            continue
+            
+        local cls = npc.GetClassname()
+        
+        // Only wipe out actual combatants on the ground
+        if ( cls == "npc_grunt" || cls == "npc_spectre" || cls == "npc_titan" || cls == "npc_marvin" )
+        {
+            // Safety Check: Do not delete NPCs that are physically attached to a dropship or droppod
+            if ( npc.GetParent() != null )
+                continue
 
-	players = GetPlayerArray()
-	foreach( player in players )
-		ObserverEntities( player )
+            // Erase the NPC instantly. 
+            // DO NOT use .Kill(), as it triggers suicide spectre explosions and breaks the dropship!
+            npc.Destroy() 
+        }
+    }
+
+    // Set the players' view to spectators
+    GM_SetObserverFunc( EndingObserverFunc )
+
+    local players = GetPlayerArray()
+    foreach( player in players )
+    {
+        if ( IsValid( player ) )
+            ObserverEntities( player )
+    }
 }
 
 function PutPlayerInEndingView( player )

@@ -8,7 +8,7 @@ function OnWeaponPrimaryAttack( attackParams )
 function OnWeaponNpcPrimaryAttack( attackParams )
 {
 	self.EmitWeaponNpcSound( LOUD_WEAPON_AI_SOUND_RADIUS_MP, 0.2 )
-	self.FireWeaponBullet( attackParams.pos, attackParams.dir, 1, damageTypes.Instant | damageTypes.SmallArms )
+	self.FireWeaponBullet( attackParams.pos, attackParams.dir, 1, damageTypes.Instant | damageTypes.Bullet )
 }
 
 function OnWeaponStartZoomIn()
@@ -19,9 +19,4 @@ function OnWeaponStartZoomIn()
 function OnWeaponStartZoomOut()
 {
 	HandleWeaponSoundZoomOut( self, "Weapon_hemlok.ADS_Out" )
-}
-
-function OnClientAnimEvent( name )
-{
-	GlobalClientEventHandler( name )
 }

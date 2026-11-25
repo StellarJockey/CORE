@@ -1,4 +1,4 @@
-const SIGNAL_TITAN_HEALTH_REGEN = "BeginTitanHealthRegen"
+const SIGNAL_TITAN_HEALTH_REGEN = "BeginTitanHealthRegen" // FO
 const SIGNAL_TITAN_SHIELD_REGEN = "BeginTitanShieldRegen"
 const TITAN_HEALTH_REGEN_DELAY_MAX				= 0.7 // 2.2
 
@@ -27,6 +27,8 @@ function main()
 	RegisterSignal( SIGNAL_TITAN_HEALTH_REGEN )
 	RegisterSignal( SIGNAL_TITAN_SHIELD_REGEN )
 	RegisterSignal( "Doomed" )
+	RegisterSignal( "RodeoRiderHitTitan" )
+
 	file.easeFunc <- Tween_ExpoEaseOut
 	// GetCurrentPlaylistName() == "Titan Wave" // GetCurrentPlaylistVarInt( "new_titan_combat", 0 )
 	level.newTitanCombat <- GetCurrentPlaylistVarInt( "titan_new_health", 0 )
@@ -114,6 +116,10 @@ function CheckRodeoRiderHitsTitan( soul, damageInfo )
 	{
 		//Set Last Attack Time so warning is triggered
 		soul.SetLastRodeoHitTime( Time() )
+
+		local rodeoTitan = soul.GetTitan()
+		if ( IsValid( rodeoTitan ) )
+			rodeoTitan.Signal( "RodeoRiderHitTitan" )
 
 		local flags = damageInfo.GetCustomDamageType()
 		flags = flags | DF_RODEO

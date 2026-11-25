@@ -41,7 +41,7 @@ function ScriptCallback_OnClientConnecting( player )
 
 function TeamDeathmatch_OnPlayerOrNPCKilled( victim, attacker, damageInfo )
 {
-	if ( !( victim.IsPlayer() ) )
+	if ( !victim.IsPlayer() && !victim.IsTitan() )
 		return
 
 	local attackerTeam = attacker.GetTeam()

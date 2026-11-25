@@ -1,4 +1,4 @@
-function main()
+function main() // FO
 {
     RegisterSignal("StartBurnCardEffect")
     IncludeScript( "_burncards_shared" );
@@ -462,14 +462,14 @@ function ApplyAmpedTactical( player, cardRef )
 // account for edge cases where it makes no sense to actually use the card
 function IsBurnCardEdgeCaseUseValid( player, cardRef )
 {
-	// Just blanket ban all of them
+    // Just blanket ban all of them
 	if ( GameRules.GetGameMode() == GUN_GAME )
 		return false
 
 	local cardData = GetBurnCardData( cardRef )
 
 	if ( cardData.ctFlags & CT_TITAN || cardData.ctFlags & CT_BUILDTIME )
-	{
+    {
         if ( Riff_TitanAvailability() == eTitanAvailability.Never )
             return false
 
@@ -538,10 +538,14 @@ function ChangeOnDeckBurnCardToActive( player )
 {
     local cardIndex = GetPlayerBurnCardOnDeckIndex( player )
 
-    if( cardIndex == -1 )
+    if( cardIndex == -1 || cardIndex == null )
         return
 
     local cardRef = player.GetPersistentVar( _GetActiveBurnCardsPersDataPrefix() + "[" + cardIndex + "].cardRef" )
+
+    // ADDED: Validate cardRef before proceeding
+    if( cardRef == null || !( cardRef in level.burnCardsByName ) )
+        return
 
     local idx = GetBurnCardIndexByRef( cardRef )
 
@@ -998,6 +1002,9 @@ function BCOnPlayerKilled( player, damageInfo )
 
 function ApplyTitanWeaponBurnCard( titan, cardRef )
 {
+    if ( !IsValid( titan ) )
+        return
+        
     local cardData = GetBurnCardData(cardRef);
     local weaponToTake = null
     local weaponData = GetBurnCardWeapon(cardRef)
@@ -1016,7 +1023,8 @@ function ApplyTitanWeaponBurnCard( titan, cardRef )
             weaponToTake = weapon;
         }
 
-        if(cardData.ctFlags & CT_TITAN_WPN) {
+        if ( cardData.ctFlags & CT_TITAN_WPN )
+        {
             // The titan can be destroyed during the waits below; every entity
             // call after a wait must re-check or it throws on a dead instance.
             if ( !IsValid( titan ) )

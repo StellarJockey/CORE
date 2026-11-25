@@ -1307,7 +1307,10 @@ function TryShowHitIndicator( hitWeakpoint, hitIneffective )
 
 function PlayKillShotSound( attacker, victim, damageType, isHeadShot )
 {
-	if ( victim.IsTitan() )
+	if ( victim.IsTitan() || "isHologram" in victim.s )
+		return false
+		
+	if ("dogfighter" in victim.s || "gunshipTurrets" in victim.s || "gunshipMover" in victim.s )
 		return false
 
 	if ( !( "playedKillShotSoundTime" in victim.s ) )
@@ -1995,7 +1998,8 @@ function TryAddGrenadeIndicator( grenade, weaponName )
 		case "mp_titanweapon_40mm":
 		case "mp_weapon_satchel":
 		case "mp_weapon_proximity_mine":
-		case WEAPON_THROWING_KNIFE_NAME:
+		case "mp_weapon_throwing_knife":
+		case "mp_ability_deployable_cover":
 			return
 	}
 
@@ -2350,10 +2354,9 @@ function ServerCallback_OnEntityKilled( attackerEHandle, victimEHandle, scriptDa
 			attacker = victim.s.latestAssistPlayer
 			damageSourceId = victim.s.latestAssistDamageSource
 		}
-
 	}
 
-	if( victim.IsPlayer() && victim != attacker && GetConVarBool( "delta_play_killsounds" ) )
+	if ( victim.IsPlayer() && victim != attacker && GetConVarBool( "delta_play_killsounds" ) )
 	{
 		if( attacker == localPlayer )
 		{

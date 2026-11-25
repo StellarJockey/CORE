@@ -1,0 +1,9 @@
+"AddonInfo"
+{
+	"addontitle"			"Aphelion's Frontier Overhaul"
+	"addonDescription"		"Single-player modpack that includes NPC Pilots and Titans, more weapons, more enemy types, and more difficult AI lethality"
+	"addonversion"			"1.0.0"
+	"addonauthor"			"Aphelion"
+
+	"addonContent_Script"	"1"
+}

@@ -1,4 +1,4 @@
-const MAX_ACTIVE_TRAPS_DISPLAYED = 5
+const MAX_ACTIVE_TRAPS_DISPLAYED = 5 // FO
 const VGUI_CLOSED = 0
 const VGUI_CLOSING = 1
 const VGUI_OPEN = 2
@@ -221,6 +221,8 @@ function PilotMainHud( cockpit, player )
 	cockpit.s.coreFXHandle <- null
 
 	local scoreGroup = HudElementGroup( "scoreboardProgress" )
+	if ( GameRules.GetGameMode() == "cp" )
+		OnHardpointCockpitCreated( cockpit, panel, scoreGroup )
 
 	MainHud_InitScoreBars( mainVGUI, player, scoreGroup )
 
@@ -398,6 +400,8 @@ function TitanMainHud( cockpit, player )
 	MainHud_InitTargetHealthBars( cockpit, player )
 
 	local scoreGroup = HudElementGroup( "scoreboardProgress" )
+	if ( GameRules.GetGameMode() == "cp" )
+		OnHardpointCockpitCreated( cockpit, panel, scoreGroup )
 
 	MainHud_InitScoreBars( mainVGUI, player, scoreGroup )
 
@@ -790,6 +794,7 @@ function UpdateDashBarColor( player )
 	dashBar.ColorOverTime( col[0], col[1], col[2], alpha, 0.5, INTERPOLATOR_DEACCEL )
 	dashBarFG.ColorOverTime( col_FG[0], col_FG[1], col_FG[2], alpha_FG, 0.5, INTERPOLATOR_DEACCEL )
 }
+Globalize( UpdateDashBarColor )
 
 // TMP.. there are more efficient ways to do this like HudAnimations.txt... but they take too long to setup right now
 function TitanShieldBarPulseThink( cockpit, player )
@@ -1222,7 +1227,7 @@ function TitanBuildBarThink( cockpit, player )
 		}
 		else
 		{
-			totalTime = GetTitanCoreBuildTime()
+			totalTime = GetCurrentPlaylistVarInt( "titan_core_build_time", TITAN_CORE_BUILD_TIME )
 			remainingTime = soul.GetNextCoreChargeAvailable() - Time()
 
 			buildingIcon = GetCoreBuildingIcon( player )
@@ -2812,12 +2817,12 @@ function ClientCodeCallback_OnSelectedWeaponChanged( selectedWeapon )
 			else
 				HideChargeAmmoBar( selectedWeapon, player )
 			break
-
-		case "mp_titanweapon_minigun":
+/*
+		case "mp_weapon_mega3":
 			DisplayChargeAmmoBar( selectedWeapon, player, 1, 0, cockpit )
 //			HideWeaponAmmoUI( cockpit )
 			break
-
+*/
 		default:
 			HideChargeAmmoBar( selectedWeapon, player )
 			break

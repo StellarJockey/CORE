@@ -322,6 +322,14 @@ function DoPostEpilogue( dev = false )
 	ClearPlayers()
 	level.clearedPlayers = true
 
+	local npcs = GetNPCArray()
+	
+	foreach( npc in npcs )
+	{
+		if ( IsValid( npc ) )
+			npc.Kill() // Deletes the entity instantly without popping up in the killfeed
+	}
+
 	wait 2.5
 
 	//set the players view to spectators
@@ -847,7 +855,11 @@ function MatchProgressUpdate( percentComplete )
 		FlagSet( "O2_Match90Percent" )
 
 	if( !Flag( "O2_Match98Percent" ) && percentComplete >= 98 )
+	{
 		FlagSet( "O2_Match98Percent" )
+		FlagSet( "Disable_IMC" )     // Stops IMC AI from spawning
+		FlagSet( "Disable_MILITIA" ) // Stops Militia AI from spawning
+	}
 
 	if( GetCinematicMode() && ( GameRules.GetGameMode() == CAPTURE_POINT ) )
 	{

@@ -1,9 +1,9 @@
 //spectres
 const SPECTRE_TRIGGER_EXPLODE_DIST = 200
-const SPECTRE_EXPLOSION_RADIUSFALLOFFMAX = 300
-const SPECTRE_EXPLOSION_RADIUSFULLDMG = 200
-const SPECTRE_EXPLOSION_TITANDMG = 500
-const SPECTRE_EXPLOSION_PILOTDMG = 100
+const SPECTRE_EXPLOSION_RADIUSFALLOFFMAX = 400 // 300
+const SPECTRE_EXPLOSION_RADIUSFULLDMG = 250    // 200
+const SPECTRE_EXPLOSION_TITANDMG = 1500 	   // 500
+const SPECTRE_EXPLOSION_PILOTDMG = 250  	   // 100
 
 enum eSuicideState
 {
@@ -112,8 +112,8 @@ function MakeSuicideSpectre( spectre )
 	spectre.s.suicideBehavior.allowNeutralize <- true
 	spectre.s.state <- eSuicideState.SPECTRE_STATE_SEARCHING
 
-	spectre.SetMaxHealth( 50 )
-	spectre.SetHealth( 50 )
+	spectre.SetMaxHealth( 1200 ) // 50
+	spectre.SetHealth( 1200 )	 // 50
 	spectre.SetAimAssistAllowed( false )
 	spectre.SetAllowMelee( false )
 	spectre.AllowSuicideAttack( true )
@@ -508,6 +508,8 @@ function SpectreExplode( spectre, results )
 function SpectreExplosionDamage( spectre, results = null )
 {
 	local pos = spectre.GetOrigin()
+	local spectreTeam = spectre.GetTeam()
+	local enemyTeam = GetOtherTeam( spectreTeam )
 
 	local TitanDmg 	 		= spectre.s.suicideBehavior.explodeTitanDmg
 	local PilotDmg 	 		= spectre.s.suicideBehavior.explodePilotDmg
@@ -518,10 +520,61 @@ function SpectreExplosionDamage( spectre, results = null )
 	if ( results && results.activator )
 		attacker = results.activator
 
-	spectre.SetTeam( TEAM_EXPLODING )
+	// Manually apply damage to only enemy team entities
+	local allEnts = GetEntArrayInRadius( pos, RadiusFalloffMax )
+	
+	foreach( ent in allEnts )
+	{
+		if ( !IsAlive( ent ) )
+			continue
+		
+		// TEAM CHECK: Only damage enemies
+		if ( ent.GetTeam() != enemyTeam )
+			continue
+		
+		if ( !IsPlayer( ent ) && !IsNPC( ent ) )
+			continue
+		
+		local distance = Distance( pos, ent.GetOrigin() )
+		local damage = 0
+		
+		if ( ent.IsTitan() )
+			damage = TitanDmg
+		else
+			damage = PilotDmg
+		
+		// Apply falloff
+		if ( distance > RadiusFullDamage )
+		{
+			local falloffFraction = ( RadiusFalloffMax - distance ) / ( RadiusFalloffMax - RadiusFullDamage )
+			falloffFraction = clamp( falloffFraction, 0.0, 1.0 )
+			damage = damage * falloffFraction
+		}
+		
+		ent.TakeDamage( damage, attacker, attacker, { damageSourceId = eDamageSourceId.suicideSpectreAoE } )
+	}
+}
+
+
+
+
+function SpectreExplosionDamage( spectre, results = null )
+{
+	local pos = spectre.GetOrigin()
+
+	local TitanDmg 	 		= spectre.s.suicideBehavior.explodeTitanDmg
+	local PilotDmg 	 		= spectre.s.suicideBehavior.explodePilotDmg
+	local RadiusFalloffMax 	= spectre.s.suicideBehavior.explodeRadiusFalloffMax
+	local RadiusFullDamage 	= spectre.s.suicideBehavior.explodeRadiusFullDamage
+
+	local attacker = spectre
+	if ( results && results.activator )
+		attacker = results.activator
+
+	// spectre.SetTeam( TEAM_EXPLODING )
 	local damageSourceId 	= eDamageSourceId.suicideSpectreAoE
 	local selfDamage 		= true
-	local team 				= TEAM_EXPLODING //so can damage everyone
+	local team 				= spectre.GetTeam()
 	local scriptFlags 		= DF_EXPLOSION
 
 	RadiusDamage( pos,					// origin
@@ -569,20 +622,31 @@ function SpectreNeutralize( spectre, results )
 	// Kill if normal NPC
 	//----------------------------------
 	if ( spectre.IsNPC() )
-	{
-		ClearDeathFuncName( spectre )
-		SetDeathFuncName( spectre, "SpectreNeutralizeDeath" )
+		{
+			ClearDeathFuncName( spectre )
+			SetDeathFuncName( spectre, "SpectreNeutralizeDeath" )
 
-		local attacker = level.worldspawn
-		local inflictor =  level.worldspawn
+			local attacker = level.worldspawn
+			local inflictor = level.worldspawn
 
-		if ( results && results.activator )
-			attacker = results.activator
-		if ( results && results.inflictor )
-			inflictor =  results.inflictor
+			if ( results && results.activator )
+				attacker = results.activator
+			if ( results && results.inflictor )
+				inflictor = results.inflictor
 
-		spectre.Die( attacker, inflictor, { force = Vector( 0.4, 0.2, 0.3 ) } )
-	}
+			// get damage source id if provided
+			local dmgSrc = null
+			if ( results && results.damageSourceId )
+				dmgSrc = results.damageSourceId
+
+			// build die options and pass damage source through so scoring sees it
+			local dieOptions = {}
+			dieOptions.force <- Vector( 0.4, 0.2, 0.3 )
+			if ( dmgSrc != null )
+				dieOptions.damageSourceId <- dmgSrc
+
+			spectre.Die( attacker, inflictor, dieOptions )
+		}
 
 	else
 	{
@@ -641,14 +705,72 @@ function SpectreSuicideOnDamaged( spectre, damageInfo )
 	local inflictor 			= damageInfo.GetInflictor()
 	local weapon 				= damageInfo.GetWeapon()
 
-	damageInfo.SetDamage( 0 )//safer to set the real damage to 0... also fixes smart pistol bug where they didn't blow up
+	damageInfo.SetDamage( 0 ) // safer to set the real damage to 0... also fixes smart pistol bug where they didn't blow up
 
 	local results = {}
 	results.activator <- attacker
 	results.inflictor <- inflictor
 	results.damageSourceId <- damageSourceId
 
-	// calculate build time credit
+	if ( damageInfo.GetCustomDamageType() & damageTypes.Electric )
+	{
+    	thread SpectreNeutralize( spectre, results )
+    	return
+	}
+
+	// CHECK FOR INSTANT-KILL / INSTANT-NEUTRALIZE DAMAGE TYPES FIRST
+	switch( damageSourceId )
+	{
+		// INSTANT EXPLOSION when stepped on, hit by a Titan weapon, heavy weapon, or a laser weapon
+		case eDamageSourceId.titan_step:
+		case eDamageSourceId.titan_melee:
+		case eDamageSourceId.mp_weapon_sniper:
+		case eDamageSourceId.mp_titanweapon_shotgun:
+		case eDamageSourceId.mp_titanweapon_40mm:
+		case eDamageSourceId.mp_titanweapon_xo16:
+		case eDamageSourceId.mp_titanweapon_rocket_launcher:
+		case eDamageSourceId.mp_titanweapon_sniper:
+		case eDamageSourceId.mp_titanweapon_triple_threat:
+		case eDamageSourceId.mp_titanweapon_minigun:
+		case eDamageSourceId.mp_titanweapon_salvo_rockets:
+		case eDamageSourceId.mp_titanweapon_dumbfire_rockets:
+		case eDamageSourceId.mp_titanweapon_shoulder_rockets:
+		case eDamageSourceId.mp_titanweapon_homing_rockets:
+		case eDamageSourceId.mp_weapon_rocket_launcher:
+		case eDamageSourceId.mp_weapon_defender:
+		case eDamageSourceId.mp_titanweapon_charge_cannon:
+		case eDamageSourceId.mp_weapon_smart_pistol:
+		case eDamageSourceId.mp_weapon_yh803:
+		case eDamageSourceId.mp_weapon_yh803_bullet:
+		case eDamageSourceId.mp_weapon_mega_turret:
+		case eDamageSourceId.mp_weapon_mega_turret_aa:
+		case eDamageSourceId.mp_titanweapon_shoulder_turret:
+			thread SpectreExplode( spectre, results )
+			return
+			
+		// Electrical things or a melee will NEUTRALIZE them
+		case eDamageSourceId.mp_weapon_grenade_emp:
+		case eDamageSourceId.mp_weapon_proximity_mine:
+		case eDamageSourceId.mp_titanweapon_arc_cannon:
+		case eDamageSourceId.mp_titanability_smoke:
+		case eDamageSourceId.mp_ability_emp:
+		case eDamageSourceId.mp_titanability_emp:
+		case eDamageSourceId.super_electric_smoke_screen:
+		case eDamageSourceId.human_melee:
+		case eDamageSourceId.grunt_melee:
+		case eDamageSourceId.spectre_melee:
+		case eDamageSourceId.titan_fall:
+		case eDamageSourceId.bubble_shield:
+		case eDamageSourceId.switchback_trap:
+		case eDamageSourceId.titanEmpField:
+		case eDamageSourceId.mp_weapon_throwing_knife:
+		case eDamageSourceId.mp_weapon_bow:
+		case eModSourceId.burn_mod_titan_xo16:
+		case eModSourceId.burn_mod_volt:
+			thread SpectreNeutralize( spectre, results )
+			return
+	}
+
 	if ( ShouldGiveTimerCredit( attacker, spectre ) && attacker.IsPlayer() )
 	{
 		local timerCredit = CalculateBuildTimeCredit( attacker, spectre, damage, spectre.s.fakeHealth, spectre.s.fakeMaxHealth, "spectre_kill_credit", 9 )
@@ -661,29 +783,6 @@ function SpectreSuicideOnDamaged( spectre, damageInfo )
 
 	if ( spectre.s.fakeHealth > 0 )
 		return
-
-	switch( damageSourceId )
-	{
-		//electrical things neutralize
-		case eDamageSourceId.mp_weapon_grenade_emp:
-		case eDamageSourceId.mp_titanweapon_arc_cannon:
-		case eDamageSourceId.mp_titanability_smoke:
-		case eDamageSourceId.mp_ability_emp:
-		case eDamageSourceId.mp_titanability_emp:
-		case eDamageSourceId.super_electric_smoke_screen:
-		case eDamageSourceId.titan_melee:
-		case eDamageSourceId.human_melee:
-		case eDamageSourceId.titan_fall:
-		case eDamageSourceId.bubble_shield:
-		case eDamageSourceId.switchback_trap:
-		case eDamageSourceId.titanEmpField:
-			thread SpectreNeutralize( spectre, results )
-			return
-
-		default:
-			//continue on
-			break
-	}
 
 	thread SpectreSelfDestructOnDamage( spectre, results )
 }

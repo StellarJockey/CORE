@@ -1,5 +1,5 @@
 
-function main()
+function main() // FO
 {
 	PrecacheHUDMaterial( "../ui/menu/common/menu_background_neutral" )
 	PrecacheHUDMaterial( "../ui/menu/common/menu_background_imc" )
@@ -42,11 +42,54 @@ function main()
 	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_backwater" )
 	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_sandtrap" )
 	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_zone_18" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_box" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_mia" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_nest2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_npe" )
 
-	PrecacheHUDMaterial( "../loadscreens/mp_box_widescreen" )
-	PrecacheHUDMaterial( "../loadscreens/mp_mia_widescreen" )
-	PrecacheHUDMaterial( "../loadscreens/mp_nest2_widescreen" )
-	PrecacheHUDMaterial( "../loadscreens/mp_npe_widescreen" )
+	/*
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_thaw" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_homestead" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_complex3" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_black_water_canal" )
+	*/
+
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_fracture_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_colony_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_relic_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_angel_city_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_outpost_207_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_boneyard_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_airbase_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_o2_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_corporate_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_lagoon_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_overlook_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_nexus_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_rise_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_smugglers_cove_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_training_ground_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_wargames_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_runoff_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_swampland_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_harmony_mines_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_switchback_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_haven_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_backwater_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_sandtrap_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_zone_18_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_box_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_mia_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_nest2_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_npe_v2" )
+
+	/*
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_thaw_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_homestead_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_complex3_v2" )
+	PrecacheHUDMaterial( "../ui/menu/lobby/lobby_image_mp_black_water_canal_v2" )
+	*/
+
 	PrecacheHUDMaterial( "../ui/menu/common/menu_background_neutral_legacy" )
 	PrecacheHUDMaterial( "../ui/menu/common/menu_background_neutral_legacy_blur" )
 
@@ -898,10 +941,11 @@ function SetMapInfo( mapName )
 	SmartGlass_SetGameStateProperty( SMARTGLASS_PROP_NEXTLEVEL, mapName )
 
 	local mapImage
-	if ( mapName == "mp_mia" || mapName == "mp_nest2" || mapName == "mp_box" || mapName == "mp_npe" || IsTitanfall2Map( mapName ) )
-		mapImage = GetMapImage( mapName )
+	if ( IsTitanfall2Map( mapName ) )
+		mapImage = "../ui/menu/lobby/lobby_image_" + mapName // mapImage = GetMapImage( mapName )
 	else
 		mapImage = "../ui/menu/lobby/lobby_image_" + mapName
+
 
 	nextMapImage.SetImage( mapImage )
 	nextMapImage.Show()

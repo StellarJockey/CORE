@@ -551,12 +551,15 @@ function SpawnGunship( vehicle )
 {
 	if ( !( "InitLeanGunship" in getroottable() ) )
 	{
-		//IncludeFile( "_vehicle_gunship" )
 		printt( "Add IncludeFile( \"_vehicle_gunship_new\" ) to your level" )
-
 		Assert( 0, "Add IncludeFile( \"_vehicle_gunship_new\" ) to your level" )
 		return
 	}
+
+	// Custom AI gunships have their own movement and hunt logic.
+	if ( "isAIGunship" in vehicle.s )
+		return
+
 	vehicle.SetAISettings( "vehicle" )
 	InitLeanGunship( vehicle )
 	thread VehicleAutoBehavior( vehicle )

@@ -15,7 +15,7 @@ WeaponData
 	// Menu Stats
 
 	// Models
-	"viewmodel"   									"models/weapons/grenades/ptpov_arc_grenade.mdl"
+	"viewmodel"   									"models/weapons/grenades/ptpov_frag_grenade.mdl"
 	"playermodel"									"models/weapons/empty_handed/w_empty_handed_human.mdl"
 	"projectilemodel" 								"models/weapons/grenades/arc_grenade.mdl"
 	"anim_prefix" 									"Grenade"
@@ -83,14 +83,14 @@ WeaponData
 	// Bob
 
 	// View Drift
-	"viewdrift_hipfire_stand_scale_pitch" 			"0.325"
-	"viewdrift_hipfire_crouch_scale_pitch"			"0.275"
-	"viewdrift_hipfire_air_scale_pitch"   			"0.5"
-	"viewdrift_hipfire_stand_scale_yaw"   			"0.12"
-	"viewdrift_hipfire_crouch_scale_yaw"  			"0.10"
-	"viewdrift_hipfire_air_scale_yaw" 				"0.22"
-	"viewdrift_hipfire_speed_pitch"   				"0.6"
-	"viewdrift_hipfire_speed_yaw" 					"1.22"
+	"viewdrift_hipfire_stand_scale_pitch" 			"0.0" // "0.325"
+	"viewdrift_hipfire_crouch_scale_pitch"			"0.0" // "0.275"
+	"viewdrift_hipfire_air_scale_pitch"   			"0.0" // "0.5"
+	"viewdrift_hipfire_stand_scale_yaw"   			"0.0" // "0.12"
+	"viewdrift_hipfire_crouch_scale_yaw"  			"0.0" // "0.10"
+	"viewdrift_hipfire_air_scale_yaw" 				"0.0" // "0.22"
+	"viewdrift_hipfire_speed_pitch"   				"0.0" // "0.6"
+	"viewdrift_hipfire_speed_yaw" 					"0.0" // "1.22"
 
 	// Rumble
 	"rumble"  										"3"
@@ -98,7 +98,7 @@ WeaponData
 	// Sway
 
 	// NPC
-
+	"npc_vortex_block"								"1"
 
 	// WeaponED Unhandled Key/Values and custom script Key/Values
 	"fire_anim_rate"  								"1"

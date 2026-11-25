@@ -29,6 +29,7 @@ WeaponData
 	// Effects
 	"tracer_effect"   								"weapon_tracers_pistol"
 	"tracer_effect_first_person"  					"weapon_tracers_pistol"
+	"impact_effect_table" 							"inc_bullet"
 	"vortex_absorb_effect"							"wpn_vortex_projectile_rifle_FP"
 	"vortex_absorb_effect_third_person"				"wpn_vortex_projectile_rifle"
 	"vortex_absorb_sound"							"Vortex_Shield_AbsorbBulletSmall"
@@ -42,7 +43,10 @@ WeaponData
 	"fx_muzzle_flash_world"							"wpn_muzzleflash_pistol"
 	"fx_muzzle_flash_attach"						"muzzle_flash"
 
+	//Sounds
 	"sound_dryfire"									"pistol_dryfire"
+	"sound_trigger_pull"							"pistol_dryfire"
+	"sound_trigger_release"							"pistol_dryfire"
 
 	// Damage - When Used by Players
 	"damage_type" 									"bullet"
@@ -55,12 +59,12 @@ WeaponData
 	"damage_rodeo" 									"200"
 
 	// Damage - When Used by NPCs
-	"npc_damage_near_distance"						"800"
-	"npc_damage_far_distance" 						"1000"
-	"npc_damage_near_value"   						"40"
-	"npc_damage_far_value"							"40"
-	"npc_damage_near_value_titanarmor"				"0"
-	"npc_damage_far_value_titanarmor" 				"0"
+	"npc_damage_near_distance"						"1050" // "800"
+	"npc_damage_far_distance" 						"1200" // "1000"
+	"npc_damage_near_value"   						"67"
+	"npc_damage_far_value"							"67"
+	"npc_damage_near_value_titanarmor"				"40"
+	"npc_damage_far_value_titanarmor" 				"10"
 
 	"explosionradius" 								"250"
 	"critical_hit_damage_scale"						"2.0"
@@ -110,7 +114,7 @@ WeaponData
 	"spread_air_hip"	   							"10"
 	"spread_air_ads"   								"1"
 
-	"spread_npc"  									"2"
+	"spread_npc"  									"0.2"
 
 	"spread_kick_on_fire_stand_hip"						".2"
 	"spread_kick_on_fire_stand_ads"						".2"
@@ -167,24 +171,33 @@ WeaponData
 	"bob_yaw" 										"1"
 	"bob_roll"										"-0.75"
 
-	// View Drift
-	"viewdrift_hipfire_stand_scale_pitch" 			"0.325"
-	"viewdrift_hipfire_crouch_scale_pitch"			"0.275"
-	"viewdrift_hipfire_air_scale_pitch"   			"0.5"
-	"viewdrift_hipfire_stand_scale_yaw"   			"0.12"
-	"viewdrift_hipfire_crouch_scale_yaw"  			"0.10"
-	"viewdrift_hipfire_air_scale_yaw" 				"0.22"
-	"viewdrift_hipfire_speed_pitch"   				"0.6"
-	"viewdrift_hipfire_speed_yaw" 					"1.22"
+	// Bob_Zoomed
+	"bob_cycle_time_zoomed"  						"0.45"
+	"bob_vert_dist_zoomed"   						"0.01"
+	"bob_horz_dist_zoomed"   						"0.01"
+	"bob_max_speed_zoomed"   						"150"
+	//"bob_pitch_zoomed"   							"0.002"
+	//"bob_yaw_zoomed" 								"-.002"
+	//"bob_roll_zoomed"								".002"
 
-	"viewdrift_ads_stand_scale_pitch" 				"0.3"
-	"viewdrift_ads_crouch_scale_pitch"				"0.3"
-	"viewdrift_ads_air_scale_pitch"   				"0.3"
-	"viewdrift_ads_stand_scale_yaw"   				"0.2"
-	"viewdrift_ads_crouch_scale_yaw"  				"0.2"
-	"viewdrift_ads_air_scale_yaw" 					"0.2"
-	"viewdrift_ads_speed_pitch"   					"0.6"
-	"viewdrift_ads_speed_yaw" 						"1.22"
+	// View Drift
+	"viewdrift_hipfire_stand_scale_pitch" 			"0.0" // "0.325"
+	"viewdrift_hipfire_crouch_scale_pitch"			"0.0" // "0.275"
+	"viewdrift_hipfire_air_scale_pitch"   			"0.0" // "0.5"
+	"viewdrift_hipfire_stand_scale_yaw"   			"0.0" // "0.12"
+	"viewdrift_hipfire_crouch_scale_yaw"  			"0.0" // "0.10"
+	"viewdrift_hipfire_air_scale_yaw" 				"0.0" // "0.22"
+	"viewdrift_hipfire_speed_pitch"   				"0.0" // "0.6"
+	"viewdrift_hipfire_speed_yaw" 					"0.0" // "1.22"
+
+	"viewdrift_ads_stand_scale_pitch" 				"0.0" // "0.3"
+	"viewdrift_ads_crouch_scale_pitch"				"0.0" // "0.3"
+	"viewdrift_ads_air_scale_pitch"   				"0.0" // "0.3"
+	"viewdrift_ads_stand_scale_yaw"   				"0.0" // "0.2"
+	"viewdrift_ads_crouch_scale_yaw"  				"0.0" // "0.2"
+	"viewdrift_ads_air_scale_yaw" 					"0.0" // "0.2"
+	"viewdrift_ads_speed_pitch"   					"0.0" // "0.6"
+	"viewdrift_ads_speed_yaw" 						"0.0" // "1.22"
 
 	// Rumble
 	"fire_rumble"									"pilot_singleshot_weak_fire"
@@ -254,10 +267,11 @@ WeaponData
 	"npc_min_range_secondary" 						"0"
 	"npc_max_range_secondary" 						"2500"
 	"npc_min_burst"   								"2"
-	"npc_max_burst"   								"5"
+	"npc_max_burst"   								"4"
 	"rest_time_between_bursts_min"					"0.2"
-	"rest_time_between_bursts_max"					"0.3"
-
+	"rest_time_between_bursts_max"					"1.0"
+	"npc_vortex_block"								"1"
+	
 	// WeaponED Unhandled Key/Values and custom script Key/Values
 	"sprintcycle_time"								"0.55"
 	"smart_ammo_search_angle" 						"45"
@@ -272,12 +286,14 @@ WeaponData
 	"smart_ammo_track_cloaked_targets"				"1"
 	"smart_ammo_targeting_time_min"					"0.37"
 	"smart_ammo_targeting_time_max"					"0.65"
-	"smart_ammo_targeting_time_min_npc"				"0.1"
-	"smart_ammo_targeting_time_max_npc"				"0.2"
-	"smart_ammo_targeting_time_modifier_projectile_owner"	"0.35"
+	
+	"smart_ammo_targeting_time_min_npc"				"0.2" // "0.1"
+	"smart_ammo_targeting_time_max_npc"				"0.4" // "0.2"
+	"smart_ammo_target_max_locks_soldier"			"2" // "1"
+	"smart_ammo_target_max_locks_spectre"			"4" // "2"
 	"smart_ammo_target_max_locks_player"			"3"
-	"smart_ammo_target_max_locks_spectre"			"2"
-	"smart_ammo_target_max_locks_soldier"			"1"
+
+	"smart_ammo_targeting_time_modifier_projectile_owner"	"0.35"
 	"smart_ammo_new_target_delay"					"0.1"
 	"smart_ammo_draw_acquisition_lines"				"1"
 	"smart_ammo_hud_lock_style"						"pilot_pistol"
@@ -327,13 +343,16 @@ WeaponData
 			"minimap_reveal_distance"			"1"
 			"smart_ammo_targeting_time_min"					"0.45"
 			"smart_ammo_targeting_time_max"					"0.8"
-			"smart_ammo_targeting_time_min_npc"				"0.1"
-			"smart_ammo_targeting_time_max_npc"				"0.25"
+			"smart_ammo_targeting_time_min_npc"				"0.2" // "0.1"
+			"smart_ammo_targeting_time_max_npc"				"0.45" // "0.25"
 			"smart_ammo_new_target_delay"					"0.22"
 
 			"fx_muzzle_flash_view"				"wpn_muzzleflash_pistol_sup_FP"
 			"fx_muzzle_flash_world"				"wpn_muzzleflash_pistol_sup"
 			"fx_muzzle_flash_attach"			"muzzle_flash_suppressor_cyl"
+
+			"rest_time_between_bursts_min"					"0.4"
+			"rest_time_between_bursts_max"					"1.2"
 		}
 		recoil_compensator
 		{
@@ -358,8 +377,8 @@ WeaponData
 			"smart_ammo_search_angle" 				"36"
 			"smart_ammo_targeting_time_min"			"0.34"
 			"smart_ammo_targeting_time_max"			"0.59"
-			"smart_ammo_targeting_time_min_npc"		"0.1"
-			"smart_ammo_targeting_time_max_npc"		"0.15"
+			"smart_ammo_targeting_time_min_npc"		"0.15" // "0.1"
+			"smart_ammo_targeting_time_max_npc"		"0.3" // "0.15"
 			"smart_ammo_new_target_delay"			"0.0"
 
 			"damage_near_distance"							"1250" // match to search distance and red crosshair range
@@ -380,7 +399,7 @@ WeaponData
 			"smart_ammo_target_max_locks_player"			"2"
 			"damage_near_value"   							"100"
 			"damage_far_value"								"67"
-			"is_burn_mod"		"1"
+			"is_burn_mod"									"1"
 		}
 
 		grunts_emulate_pilot_multilock
@@ -419,11 +438,12 @@ WeaponData
 			{
 				"size_fov"					"55"
 				"fixed_color"				"153 190 246 200"
-				"draw_while_zooming"		"0"
+				//"draw_while_zooming"		"0"
 				"draw_while_ads"			"0"
 				"fade_while_reloading"		"1"
 				"stationary"				"1"
 				"smartPistolLocked_color"	"1"
+				"fade_while_zooming"		"1"
 			}
 			Element0
 			{

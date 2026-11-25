@@ -470,10 +470,13 @@ function IntroMilitiaNPC()
 		{
 			if ( IsAlive( titan ) )
 			{
+				titan.SetName( "#NPC_CAPTAIN_HAINEY" )
 				titan.SetEfficientMode( false )
 				EnableRodeo( titan )
 				AllowTeamRodeo( titan, true )
+				GiveTitanPilot( titan, true )
 				GiveTitanPilotModel( titan, TEAM_MILITIA_CAPTAIN_MDL )
+				titan.s.pilotIsNPCCaptain <- true
 			}
 		}
 	)
@@ -761,10 +764,13 @@ function IntroIMCNPC( restart = false )
 
 			if ( IsAlive( titan ) )
 			{
+				titan.SetName( "#NPC_CAPTAIN_BRACKEN" )
 				titan.SetEfficientMode( false )
 				EnableRodeo( titan )
 				AllowTeamRodeo( titan, true )
+				GiveTitanPilot( titan, true )
 				GiveTitanPilotModel( titan, TEAM_IMC_CAPTAIN_MDL )
+				titan.s.pilotIsNPCCaptain <- true
 			}
 
 			foreach ( grunt in grunts )

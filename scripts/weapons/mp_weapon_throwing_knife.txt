@@ -1,22 +1,29 @@
 WeaponData
 {
 	// General
-	"printname"   									"#WPN_THROWING_KNIFE"
-	"shortprintname"								"#WPN_THROWING_KNIFE_SHORT"
-	"description" 									"#WPN_THROWING_KNIFE_DESC"
-	"longdesc" 										"#WPN_THROWING_KNIFE_LONGDESC"
+	"printname"   									"Throwing Knife"
+	"shortprintname"								"Throwing Knife"
+	"description" 									"Retrievable stealth blade"
+	"longdesc" 										"The Throwing Knife is a throwable version of the TW-008 Data Knife, now owned by Wonyeon Defense. While it requires some finesse to use, it will silently one-shot any human-sized target. It can also be retrieved once thrown."
 	"weaponClass" 									"human"
-	"fire_mode"   									"semi-auto"
+	"fire_mode"   									"offhand"
+	"offhand_toss"									"1"
 	"server_vscript"  								"weapons/mp_weapon_throwing_knife"
 	"client_vscript"  								"weapons/mp_weapon_throwing_knife"
 	"projectile_vscript"  							"weapons/mp_weapon_throwing_knife"
-	"minimap_reveal_distance"						"32000"
+	"minimap_reveal_distance"						"1" // "32000"
+
+	// Menu Stats
+	"stat_damage" 									"100"
+	"stat_range"  									"10"
+	"stat_accuracy"   								"20"
+	"stat_rof"										"31"
 
 	// Models
 	"viewmodel"   									"models/weapons/data_knife/ptpov_data_knife.mdl"
-	"projectilemodel" 									"models/weapons/data_knife/v_data_knife.mdl"
+	"projectilemodel" 								"models/weapons/data_knife/v_data_knife.mdl"
 	"playermodel"									"models/weapons/empty_handed/w_empty_handed_human.mdl"
-	//"projectilemodel"								"models/weapons/grenades/m20_f_grenade_projectile.mdl"
+	"anim_prefix" 									"Grenade"
 	"activitymodifier"								"offhand"
 
 	// Effects
@@ -72,20 +79,19 @@ WeaponData
 	"explosion_shake_frequency"						"45"
 	"explosion_shake_duration"						"0.25"
 
-
 	"critical_hit"									"1"
 
 	// Ammo
-	"ammo_clip_size"   								"1"
-	"ammo_default_total"							"3"
-	"ammo_stockpile_max"							"3"
+	"ammo_clip_size"   								"2"
+	"ammo_default_total"							"2"
+	
 
 	// Behavior
 	"fire_rate"   									"2.6"
 	"reload_time" 									"0.5"
 	"reloadempty_time"								"0.5"
 	"holster_time"									"0.5"
-	"deploy_time" 									"0.66"
+	"deploy_time" 									"0.33" // "0.66"
 	"lower_time"  									"0.25"
 	"raise_time"  									"0.3"
 	"allow_empty_fire"								"0"
@@ -94,9 +100,7 @@ WeaponData
 	"empty_reload_only"   							"0"
 	"trigger_snipercam"   							"0"
 	"grenade_impact_velocity_dampen_factor"			"0.85"
-	"allow_headshots" 								"0"
-	"primary_fire_does_not_block_sprint"			"1"
-	"ads_move_speed_scale"							"0.75"
+	"allow_headshots" 								"1" // "0"
 	"aimassist_disable_hipfire"						"1"
 	"aimassist_disable_ads"							"1"
 	"move_speed_modifier" 							"1.00"//Bug with move speed > 1.0, temporary work around.
@@ -129,19 +133,19 @@ WeaponData
 	"viewkick_spring"									"pistol"
 
 	// View Drift
-	"viewdrift_hipfire_stand_scale_pitch" 			"0.325"
-	"viewdrift_hipfire_crouch_scale_pitch"			"0.275"
-	"viewdrift_hipfire_air_scale_pitch"   			"0.5"
-	"viewdrift_hipfire_stand_scale_yaw"   			"0.12"
-	"viewdrift_hipfire_crouch_scale_yaw"  			"0.10"
-	"viewdrift_hipfire_air_scale_yaw" 				"0.22"
-	"viewdrift_hipfire_speed_pitch"   				"0.6"
-	"viewdrift_hipfire_speed_yaw" 					"1.22"
+	"viewdrift_hipfire_stand_scale_pitch" 			"0.0" // "0.325"
+	"viewdrift_hipfire_crouch_scale_pitch"			"0.0" // "0.275"
+	"viewdrift_hipfire_air_scale_pitch"   			"0.0" // "0.5"
+	"viewdrift_hipfire_stand_scale_yaw"   			"0.0" // "0.12"
+	"viewdrift_hipfire_crouch_scale_yaw"  			"0.0" // "0.10"
+	"viewdrift_hipfire_air_scale_yaw" 				"0.0" // "0.22"
+	"viewdrift_hipfire_speed_pitch"   				"0.0" // "0.6"
+	"viewdrift_hipfire_speed_yaw" 					"0.0" // "1.22"
 
 	"deployfirst_time"								"1.25"
 	"deploycatch_time"								"1.33"
-	"sprintcycle_time"								".55"
 	"is_anti_titan"  							    "0"
+	"npc_vortex_block"								"1"
 
 	// Crosshair
 	"red_crosshair_range" 							"1500"
@@ -150,8 +154,17 @@ WeaponData
     "clip_bodygroup_index_shown"			"0"
     "clip_bodygroup_index_hidden"			"1"
 
+	"fire_anim_rate"  								"1"
+	"hud_icon"										"HUD/dpad_call_in_throwing_knife"
+
 	Mods
 	{
+		pas_ordnance_pack
+		{
+			"ammo_clip_size"   						"1++"
+			"ammo_default_total"					"1++"
+		}
+
 		dev
 		{
 			"ammo_default_total"							"99"
@@ -173,37 +186,43 @@ WeaponData
 		{
 			DefaultElementBehavior
 			{
-				"size_x"					"36"
-				"size_y"					"36"
-				"rotation"					"180"
-				"fade_while_sprinting"		"0"
-				"fade_while_reloading"		"1"
-				"fade_while_zooming"		"1"
-				"draw_while_ads"			"0"
-				"draw_while_hip"			"1"
+				"rotation"					"90"
+				"size_x"					"44"
+				"size_y"					"44"
 			}
 			Element0
 			{
-				"type"						"static"
-				"material"					"hud/crosshairs/b3wingman"
-				"size_x"					"28"
-				"size_y"					"28"
+				"type"						"spread"
+				"material"					"hud/crosshairs/standard_plus"
+				"spread_initial_offset"		"-12"
 			}
 			Element1
 			{
-				"type"						"static"
-				"material"					"hud/crosshairs/b3wingman_shadow"
-				"size_x"					"28"
-				"size_y"					"28"
+				"type"						"spread"
+				"material"					"hud/crosshairs/standard_plus_shadow"
+				"spread_initial_offset"		"-12"
 			}
 		}
 		Burn_Mod //Match BaseWeapon + default color change until override setting.
 		{
-			"inherit_data_from"				"BaseWeapon"
-
 			DefaultElementBehavior
 			{
+				"rotation"					"90"
+				"size_x"					"44"
+				"size_y"					"44"
 				"default_color"				"246 134 40 255"
+			}
+			Element0
+			{
+				"type"						"spread"
+				"material"					"hud/crosshairs/standard_plus"
+				"spread_initial_offset"		"-12"
+			}
+			Element1
+			{
+				"type"						"spread"
+				"material"					"hud/crosshairs/standard_plus_shadow"
+				"spread_initial_offset"		"-12"
 			}
 		}
 	}

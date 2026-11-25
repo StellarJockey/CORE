@@ -1,5 +1,5 @@
 //********************************************************************************************
-//	Lobby
+//	Lobby FO
 //********************************************************************************************
 
 RegisterSignal( "end_lobby_logic" )
@@ -76,6 +76,7 @@ function main()
 	AddClientCommandCallback( "PrivateMatchSetMode", ClientCommand_PrivateMatchSetMode )
 	AddClientCommandCallback( "PrivateMatchLaunch", ClientCommand_PrivateMatchLaunch )
 	AddClientCommandCallback( "PrivateMatchSwitchTeams", ClientCommand_PrivateMatchSwitchTeams )
+	AddClientCommandCallback( "PrivateMatchScrambleTeams", ClientCommand_PrivateMatchScrambleTeams )
 	AddClientCommandCallback( "CancelMatchSearch", ClientCommand_CancelMatchSearch ) //
 	AddClientCommandCallback( "GenUp", ClientCommand_GenUp ) //
 	AddClientCommandCallback( "RegenMenuViewed", ClientCommand_RegenMenuViewed ) //
@@ -240,7 +241,7 @@ function CodeCallback_OnClientConnectionCompleted( player )
 	if ( GetLobbyType() == "party" )
 		UpdateCustomMatchMapIfUnavailable()
 
-	if ( GetCurrentPlaylistVarInt( "lobby_campaign_scene", 0 ) == 1 )
+	if ( GetCurrentPlaylistVarInt( "lobby_campaign_scene", 0 ) == 1 || IsPrivateMatch() )
 		thread PlayCampaignLobbyScene( player )
 
 	if ( !GetTrainingHasEverBeenStarted( player ) && IsMatchmakingServer() )
@@ -474,7 +475,7 @@ function PrivateMatchLobbyLogic()
 	local modeName = GetLastServerGameMode()
 
 	// I don't like ctf
-	if ( modeName == null )
+    if ( modeName == null )
 		modeName = "at"
 
 	local mapName = GetLastServerMap()
@@ -496,24 +497,16 @@ function PrivateMatchLobbyLogic()
 		{
 			if ( level.ui.gameStartTime == null )
 			{
-                printt("Starting countdown!")
+				printt("Starting countdown!")
 				StartCountDown()
 				RefreshPlayerSkillRatings()
-			}
 
-			timeRemaining = level.ui.gameStartTime - Time()
-
-			if ( timeRemaining <= 10 && timeRemaining > -0.5 )
-			{
-				tickTime = ceil( timeRemaining )
-
-				if ( tickTime != lastTickTime )
+				// --- NEW LOGIC FOR CAMPAIGN LOBBIES ---
+				if ( modeName == "campaign_carousel" )
 				{
-					players = GetPlayerArray()
-					foreach ( player in players )
-						EmitSoundAtPositionOnlyToPlayer( Vector(0, 0, 0), player, PREMATCH_COUNTDOWN_SOUND )
-
-					lastTickTime = tickTime
+					// Override the standard 15-second timer to 65 seconds
+					// This ensures there is enough time for the longest VO briefing to play
+					level.ui.gameStartTime = Time() + 65.0
 				}
 			}
 
@@ -606,6 +599,8 @@ function MatchmakingServerLobbyLogic()
                         foreach ( p in players )
                             p.SetTeam( TEAM_MILITIA )
                     }
+
+					/*
                     else
                     {
                         local imcPlayers = []
@@ -641,7 +636,7 @@ function MatchmakingServerLobbyLogic()
                             }
                         }
                     }
-
+					*/
 
                     MarkTeamsAsBalanced_On()
                     needSkillBalance = false
@@ -897,14 +892,14 @@ function UpdateTeamReadyStatus()
 
 			if ( IsPrivateMatch() )
 			{
+				local totalPlayers = GetTeamPlayerCount( TEAM_IMC ) + GetTeamPlayerCount( TEAM_MILITIA )
+
 				if ( IsAnyPlayerMMDebug() || GetConVarBool( "developer" ) )
 					file.teamReady[team] = true
-				else if ( (playerCount > file.maxTeamSize) || (playerCount < 1) || ((GetTeamPlayerCount( TEAM_IMC ) + GetTeamPlayerCount( TEAM_MILITIA )) < minPlayers) )
-					// Be able to start the private match solo for now (probably forever)
-					file.teamReady[team] = false
+				else if ( totalPlayers >= 1 && playerCount <= file.maxTeamSize )
+					file.teamReady[team] = true      // any split (2v0, 1v1, 0v2) is fine
 				else
-					file.teamReady[team] = true
-				file.teamReady[team] = true
+					file.teamReady[team] = false
 			}
 			else
 			{
@@ -1436,33 +1431,30 @@ function PlayCampaignLobbyScene( player )
 {
 	Assert( IsValid( player ) )
 	Assert( IsPlayer( player ) )
-
 	player.EndSignal( "Disconnected" )
-
-	while( 1 )
+	for ( ;; )
 	{
 		FlagWait( "CountDownTimerStarted" )
+		
+		local nextMap
+		if ( IsPrivateMatch() )
+			nextMap = GetMapNameForEnum( level.ui.privatematch_map )
+		else
+			nextMap = file.nextMapModeCombo.mapName
 
-		if ( !GetCinematicMode() )
-			return
-
-		local timeCountDown = level.ui.gameStartTime - Time()
-		local delay = timeCountDown - 73 // 63 seconds for lobby VO, 10 seconds for breathing room at the end.
-		if ( delay < 0 )
-			delay = 0
-
-		if ( delay )
-			wait delay // give the lobby some breathing room
-
-		if ( !Flag( "CountDownTimerStarted" ) )
-			continue
-
-		local nextMap = file.nextMapModeCombo.mapName
 		Assert( nextMap )
-
 		local timeLeft = level.ui.gameStartTime - Time()
-		PlayLobbyScene( player, nextMap, timeLeft )
-
+		
+		// Wrap the call in a try/catch so missing intro scenes don't crash the server
+		try 
+		{
+			PlayLobbyScene( player, nextMap, timeLeft )
+		} 
+		catch ( e ) 
+		{
+			printt( "No lobby scene found for map: " + nextMap + ". Skipping." )
+		}
+		
 		FlagWaitClear( "CountDownTimerStarted" )
 	}
 }
@@ -1854,10 +1846,13 @@ function ClientCommand_PrivateMatchLaunch( player, ... )
 {
     if ( !IsPrivateMatch() )
         return false
+
     if ( GetLobbyType() != "game" )
         return false
+
     if ( GetMapName() != "mp_lobby")
         return false
+
     if ( GetPartyLeader( player ) != player )
     {
         printt( "Player", player.GetPlayerName(), "tried to 'PrivateMatchLaunch', but is a party follower." )
@@ -1884,17 +1879,17 @@ function ClientCommand_PrivateMatchLaunch( player, ... )
                 p.SetTeam( TEAM_MILITIA )
         }
     }
-    // Add autobalancing logic here, just before marking teams as balanced
-    else if ( GetConVarBool( "delta_autoBalanceTeams" ) )
+
+	// Save the lobby team choice to persistence before changing maps
+    foreach ( p in players )
     {
-        //if ( modeName == "COOPERATIVE" ) // Original coop check moved above
-        //{
-        //    // In cooperative, put everyone on TEAM_MILITIA
-        //    foreach ( p in players )
-        //        p.SetTeam( TEAM_MILITIA )
-        //}
-        //else
-        //{
+        p.SetPersistentVar( "campaignTeam", p.GetTeam() )
+    }
+
+	/*
+    // Add autobalancing logic here, just before marking teams as balanced
+    else if ( GetConVarBool( "delta_autoBalanceTeams" ) && players.len() > 1 )
+    {
             local imcPlayers = []
             local militiaPlayers = []
 
@@ -1930,8 +1925,8 @@ function ClientCommand_PrivateMatchLaunch( player, ... )
                         militiaPlayers[i].TrueTeamSwitch()
                 }
             }
-        //}
     }
+	*/
 
     file.nextLaunchCommandValid = Time() + 0.25
 
@@ -1975,24 +1970,67 @@ function ClientCommand_PrivateMatchSwitchTeams( player, ... )
         newMilitiaCount--
     }
 
-    // If auto-balance is enabled, prevent manual switches that increase imbalance.
-    if ( GetConVarBool( "delta_autoBalanceTeams" ) )
-    {
-        local currentImbalance = abs(currentIMCCount - currentMilitiaCount)
-        local newImbalance = abs(newIMCCount - newMilitiaCount)
-        if ( newImbalance > currentImbalance )
-        {
-             printt( "AutoBalance enabled: Preventing manual team switch that would increase imbalance." )
-             return false
-        }
-    }
-    // Original check (commented out): Don't allow the switch if it would create an imbalance of more than 1 player
-    // if (abs(newIMCCount - newMilitiaCount) > 1)
-    //    return false
-
     player.TrueTeamSwitch()
     UpdatePrivateMatchReadyStatus( true )
     return true
+}
+
+// Host only: shuffles everyone in the Private Match lobby across IMC and Militia, as evenly as possible
+// (with an odd count the extra player lands on a random side).
+function ClientCommand_PrivateMatchScrambleTeams( player, ... )
+{
+	if ( !IsPrivateMatch() )
+		return false
+	if ( GetLobbyType() != "game" )
+		return false
+	if ( GetMapName() != "mp_lobby" )
+		return false
+	if ( GetPartyLeader( player ) != player )
+	{
+		printt( "Player", player.GetPlayerName(), "tried to 'PrivateMatchScrambleTeams', but is a party follower." )
+		return false
+	}
+	if ( level.ui.privatematch_starting == ePrivateMatchStartState.STARTING )
+		return false
+
+	local players = []
+	foreach ( p in GetPlayerArray() )
+	{
+		if ( p.GetTeam() == TEAM_IMC || p.GetTeam() == TEAM_MILITIA )
+			players.append( p )
+	}
+
+	if ( players.len() < 2 )
+		return false
+
+	local imcCount = players.len() / 2
+	if ( players.len() % 2 == 1 && RandomInt( 2 ) == 0 )
+		imcCount++
+
+	// A scramble that leaves everybody where they were isn't one; reshuffle until at least one player moves
+	for ( local attempt = 0; attempt < 10; attempt++ )
+	{
+		ArrayRandomize( players )
+
+		local moves = 0
+		foreach ( i, p in players )
+		{
+			if ( p.GetTeam() != ( i < imcCount ? TEAM_IMC : TEAM_MILITIA ) )
+				moves++
+		}
+
+		if ( moves > 0 )
+			break
+	}
+
+	foreach ( i, p in players )
+	{
+		if ( p.GetTeam() != ( i < imcCount ? TEAM_IMC : TEAM_MILITIA ) )
+			p.TrueTeamSwitch()
+	}
+
+	UpdatePrivateMatchReadyStatus( true )
+	return true
 }
 
 function ClientCommand_CancelMatchSearch( player, ... )

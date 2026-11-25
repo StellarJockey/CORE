@@ -1,10 +1,10 @@
 "Basic"
 {
 	"$surfaceprop" "default"
-
+	/*
 	"$basetexture" "models\weapons\attachments\ammo_counter_meter_col"
-	"$selfillummask" "models\weapons\attachments\ammo_counter_meter_ilm"
-	"$translucent" "1"
+	// "$selfillummask" "models\weapons\attachments\ammo_counter_meter_ilm"
+	// "$translucent" "1"
 	//"$selfillum" "1"
 	
 	"$ammo" "0"
@@ -13,7 +13,7 @@
 	"$colfrachigh" "{133 231 255}"
 	"$colfraclow" "{255 75 66}"
 
-	"$valueone" "1"
+	"$valueone" "0"
 
 	"Proxies"
 	{
@@ -46,4 +46,5 @@
 			"resultVar"		"$color"
 		}
 	}
+	*/
 }

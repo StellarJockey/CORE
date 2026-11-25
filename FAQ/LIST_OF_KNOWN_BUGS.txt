@@ -1,0 +1,17 @@
+///// HARD CRASHES /////
+* N/A (...for now)
+
+///// VISUAL BUGS /////
+* NPC Titans sometimes do the stanky leg when standing up.
+* NPC Titans sometimes have flames shooting out of them like in an orbital drop.
+* The two TF|2 primaries will have muzzle flash and bullet casing ejections when you zoom out of ADS immediately after firing.
+
+///// GAMEPLAY BUGS /////
+* NPCs sometimes have issues getting their shots on you to register (another possible base game issue).
+* As an Atlas, you cannot use the Ogre termination; 'ogpov_melee_armrip_attacker' does not exist for it.
+* Shoulder turret is very janky and makes no noise when firing.
+
+///// MENU BUGS... /////
+* If you try and open your Titan loadouts after a game, you sometimes get locked into the Burn Cards menu with no way to back out, forcing you to restart the game.
+
+Note: These are all being worked on and will hopefully be fixed in the near future!

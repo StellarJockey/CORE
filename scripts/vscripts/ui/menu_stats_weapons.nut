@@ -1,7 +1,7 @@
 
 //ToDo: Kills Per Minute stat
 
-const MAX_LIST_ITEMS = 26
+const MAX_LIST_ITEMS = 29
 const SCROLL_START_TOP = 2
 const WEAPON_LIST_VISIBLE = 6
 const MENU_MOVE_TIME = 0.15

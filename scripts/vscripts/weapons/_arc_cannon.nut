@@ -590,8 +590,8 @@ function ZapTarget( zapInfo, target, beamStartPos, beamEndPos, chainNum = 1 )
 				damageMin = GetWeaponInfoFileKeyField_Global( "mp_titanweapon_arc_cannon", "damage_far_value" )
 				damageMax = GetWeaponInfoFileKeyField_Global( "mp_titanweapon_arc_cannon", "damage_near_value" )
 			}
-
-			if ( target.IsNPC() )
+			// only grunts get zapped to the extreme
+			if ( target.IsSoldier() && !IsGruntCaptain( target ) && !IsReskinnedPilot( target ) && !IsGhostPilot( target ) )
 			{
 				damageMin *= 3.0	// more powerful against NPC humans so they die easy
 				damageMax *= 3.0

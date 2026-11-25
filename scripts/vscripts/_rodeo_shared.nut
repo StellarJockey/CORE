@@ -219,19 +219,28 @@ function main()
 
 function AllowTeamRodeo( titan, trueorfalse )
 {
-	titan.s.npc_AllowTeamRodeo = trueorfalse
+    // Ensure the script-state table exists before writing into it
+    if ( !("s" in titan) )
+        titan.s <- {}
+
+    titan.s.npc_AllowTeamRodeo <- trueorfalse
 }
 Globalize( AllowTeamRodeo )
 
 function IsAllowedTeamRodeo( titan )
 {
-	// Only bad thing about this is that it makes the rodeo popup not show up
-	// But at least it works i guess?
-	if ( IsClient() )
-		return false
+    // Only bad thing about this is that it makes the rodeo popup not show up
+    // But at least it works i guess?
+    if ( IsClient() )
+        return false
 
-	return titan.s.npc_AllowTeamRodeo
+    // If the key doesn't exist, default to false
+    if ( !("s" in titan) || !("npc_AllowTeamRodeo" in titan.s) )
+        return false
+
+    return titan.s.npc_AllowTeamRodeo
 }
+Globalize( IsAllowedTeamRodeo )
 
 function CodeCallback_OnRodeoAttach( player, titan )
 {

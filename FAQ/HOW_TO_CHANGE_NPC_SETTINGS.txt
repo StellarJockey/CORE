@@ -1,0 +1,64 @@
+//////////////////////////
+/// MAX NUMBER OF NPCS ///
+//////////////////////////
+
+* Go into \scripts\vscripts\mp\_ai_game_modes
+* ctrl + f to find:
+	level.max_npc_per_side = usePilots ? 24 : 12
+	level.max_npc_per_side_small = usePilots ? 20 : 9
+
+* To me, 24 feels about right for most maps, but you can raise or lower it to whatever you feel like.
+* 20 is for smaller maps that feel overcrowded with lots of minions.
+* 12 and 9 are the defaults for when there are too many bots/players
+
+///////////////////////
+//// ADJUST NPC AI ////
+///////////////////////
+
+* Go into \scripts\vscripts\mp\_ai_soldiers
+* ctrl + f to find:
+    function UpdateAILethality( soldier, enemy )
+
+* The enemy accuracy and proficiency will change depending on the difficulty.
+* As far as I can tell, 4 seems to be the highest meaningful value.
+
+///////////////////////////
+/// NPC TITANS PER TEAM ///
+///////////////////////////
+
+* Go into \scripts\vscripts\mp\_ai_npc_titans
+* ctrl + f to find:
+ 	function ShouldSpawnPilotWithTitan( team ) // Titan Spawns per Team
+
+* The limits will be inside the function.
+* Your team will have 5 NPC Titans and the enemy will have 6. This makes it a fair 6v6 fight
+
+* You can also go into \scripts\vscripts\mp\_ai_npc_titans
+* ctrl + f to find:
+	local spawnDelay = RandomFloat( 20.0, 90.0 )
+
+* Your team will have a longer wait time to respawn NPC Titans, depending on the difficulty
+
+/////////////////////////
+/// SPECIAL NPC WAVES ///
+/////////////////////////
+
+* Sniper Spectres, Suicide Spectres, Cloak Drones, Ghost Pilots, Gunships have a chance to spawn in waves.
+
+* Go into \scripts\vscripts\mp\_ai_game_modes
+* ctrl + f to find:
+    function SuicideSpectreWaveThink( team )
+    function GunshipWaveThink( team )
+    And so on...
+
+* From here, you can adjust how often waves happen and how many NPCs they spawn
+
+////////////////////////
+/// CONSOLE COMMANDS ///
+////////////////////////
+
+* Press ~ to open the console ( 1 means enabled, 0 means disabled )
+
+    delta_play_hitsounds 0 (disables the distracting sfx when shooting enemies)
+    delta_play_killsounds 0  (same but for killing enemies)
+    sv_cheats 1; notarget; noclip; (makes NPCs not target you and enables free roam)

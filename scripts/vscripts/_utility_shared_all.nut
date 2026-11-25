@@ -1,5 +1,5 @@
 
-function PrintObject( obj, indent, depth, maxDepth )
+function PrintObject( obj, indent, depth, maxDepth ) // FO
 {
 	if ( IsTable( obj ) )
 	{
@@ -1098,7 +1098,7 @@ function IsMultiGamemodePlaylist( playlist = null )
 	{
 		case CAMPAIGN:
 		case VARIETY_PACK:
-		case DEADLY_GROUND:
+		// case DEADLY_GROUND:
 		case "all_mini":
 			return true
 	}

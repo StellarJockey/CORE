@@ -19,7 +19,7 @@ function main()
 
 	FlagSet( "CinematicOutro" ) //-->deprecated? do we even need this anymore?
 
-	// AddSpawnCallback( "npc_spectre", SpectreDefaultSpawnFracture )
+	AddSpawnCallback( "npc_spectre", SpectreDefaultSpawnFracture )
 
 	FlagInit( "IntroGoMilitia" )
 	FlagInit( "MCOR_captain_anim" )
@@ -77,6 +77,16 @@ function main()
 		SetGameWonAnnouncement( "FractureWonAnnouncement" )
 		SetGameLostAnnouncement( "FractureLostAnnouncement" )
 		SetGameModeAnnouncement( "GameModeAnnounce_CP" )
+	}
+}
+
+function SpectreDefaultSpawnFracture( spectre )
+{
+	// Force all spectres to use Mk. I model on Fracture in campaign
+	if ( GetCurrentPlaylistName() == "campaign_carousel" )
+	{
+		if ( spectre.GetModelName() != MILITIA_SPECTRE_MODEL )
+			spectre.SetModel( MILITIA_SPECTRE_MODEL )
 	}
 }
 
@@ -706,10 +716,13 @@ function IntroMilitiaCaptain()
 
 			if ( IsAlive( titan ) )
 			{
+				titan.SetName( "#NPC_CAPTAIN_DUNNAM" )
 				titan.SetEfficientMode( false )
 				DeleteAnimEvent( titan, "cockpitOpen", ChangCockpitOpen )
 				AllowTeamRodeo( titan, true )
+				GiveTitanPilot( titan, true )
 				GiveTitanPilotModel( titan, TEAM_MILITIA_CAPTAIN_MDL )
+				titan.s.pilotIsNPCCaptain <- true
 
 				thread IntroCaptainMCORFight( titan )
 			}
@@ -1224,10 +1237,12 @@ function IntroIMCCaptain( test = false )
 			if( IsAlive( titan ) )
 			{
 				titan.SetTitle( "#NPC_CAPTAIN_RIGGS" )
-				titan.SetShortTitle( "#NPC_CAPTAIN_RIGGS" )
+				titan.SetName( "#NPC_CAPTAIN_RIGGS" )
 				titan.SetEfficientMode( false )
 				AllowTeamRodeo( titan, true )
+				GiveTitanPilot( titan, true )
 				GiveTitanPilotModel( titan, TEAM_IMC_CAPTAIN_MDL )
+				titan.s.pilotIsNPCCaptain <- true
 
 				thread IntroCaptainIMCFight( titan )
 			}
@@ -2166,18 +2181,5 @@ function FractureSpecificChatter( npc ) //level script files are includeScripted
 	PlaySquadConversationToTeam( "fracture_grunt_chatter", npc.GetTeam(), npc, AI_FRIENDLY_CHATTER_RANGE_SQR )
 	return true //return false if we should not be doing chatter so we can fall through and do other chatter if needed
 }
-
-/*
-function SpectreDefaultSpawnFracture( spectre )
-{
-	// Force all spectres to use Mk. I model on Fracture in campaign
-	if ( GetCinematicMode() )
-	{
-		if ( spectre.GetModelName() != MILITIA_SPECTRE_MODEL )
-			spectre.SetModel( MILITIA_SPECTRE_MODEL )
-	}
-}
-*/
-
 
 main()

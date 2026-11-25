@@ -31,8 +31,8 @@ WeaponData
     "tracer_effect"                                   "weapon_tracers_xo_shotgun"
     "tracer_effect_first_person"                      "weapon_tracers_xo_shotgun"
     "impact_effect_table"                             "titan_bullet"
-    //"vortex_absorb_effect"                            "wpn_vortex_projectile_shotgun_FP"
-    //"vortex_absorb_effect_third_person"                "wpn_vortex_projectile_shotgun"
+    //"vortex_absorb_effect"                          "wpn_vortex_projectile_shotgun_FP"
+    //"vortex_absorb_effect_third_person"             "wpn_vortex_projectile_shotgun"
 	"vortex_absorb_effect"                            "wpn_vortex_projectile_40mm_FP"
 	"vortex_absorb_effect_third_person"               "wpn_vortex_projectile_40mm"
     
@@ -49,7 +49,7 @@ WeaponData
 
     // Sound
     //"looping_sounds"                                "1"
-    "fire_sound_1"                                  "Weapon_40mm_Fire_Burst" //titan_shotgun_mega_fire
+    "fire_sound_1"                                  "Weapon_40mm_Fire_Burst"
     "fire_sound_2"                                  "Weapon_bulletCasings.Bounce"
     "sound_dryfire"                                   "titan_dryfire"
 
@@ -62,20 +62,20 @@ WeaponData
     "damage_far_value"                               "60"
     "damage_falloff_type"                            "inverse"
     "damage_inverse_distance"                        "350"
-    "damage_near_value_titanarmor"                   "1000"
-    "damage_far_value_titanarmor"                    "250" //"550"
+    "damage_near_value_titanarmor"                   "1150" // "1000"
+    "damage_far_value_titanarmor"                    "250" // "550"
     
 
     "impulse_force"                                   "5000" //"15000"
     "critical_hit_damage_scale"                       "3.0"
 
     // Damage - When Used by NPCs
-    "npc_damage_near_distance"                        "200" //"100"
-    "npc_damage_far_distance"                         "2000" //"1200"
-    "npc_damage_near_value"                           "180"
+    "npc_damage_near_distance"                        "150" //"100"
+    "npc_damage_far_distance"                         "1500" //"1200"
+    "npc_damage_near_value"                           "215"
     "npc_damage_far_value"                            "60"
-    "npc_damage_near_value_titanarmor"                "100" //"1050" //basically have to neuter them because they deal a SHIT ton of damage
-    "npc_damage_far_value_titanarmor"                 "100" //"400"
+    "npc_damage_near_value_titanarmor"                "200" //"1050" //basically have to neuter them because they deal a SHIT ton of damage
+    "npc_damage_far_value_titanarmor"                 "250" //"400"
 
 
     // Ammo
@@ -86,7 +86,7 @@ WeaponData
     // Behavior
     "fire_rate"                                       "5.5"
     "burst_fire_count"								  "3"
-	"burst_fire_delay"								  "1.0" //"0.6"
+	"burst_fire_delay"								 "0.8" // "1.0" "0.6"
     "zoom_time_in"                                    "0.1"
     "zoom_time_out"                                   "0.1"
     "zoom_fov"                                        "50" //"58"
@@ -104,12 +104,12 @@ WeaponData
     "headshot_distance"                             "2000"
     "damage_headshot_scale"                         "1.5"
 
-    "reload_time"                                 "3.0"
-    "reload_time_late1"                     "2.4"
-	"reload_time_late2" 							"1.6"
-    "reloadempty_time"                        "3.0"
-    "reloadempty_time_late1"            "2.4"
-	"reloadempty_time_late2" 					"1.6"
+    "reload_time"                                   "3.0"
+    "reload_time_late1"                             "2.4"
+	"reload_time_late2" 					    	"1.6"
+    "reloadempty_time"                              "3.0"
+    "reloadempty_time_late1"                        "2.4"
+	"reloadempty_time_late2" 				    	"1.6"
 
     // Spread
     "spread_stand_hip"                                  "10"
@@ -217,29 +217,30 @@ WeaponData
     "npc_max_range"                                   "1500"
 	"npc_min_burst"                                   "3" //"1"
 	"npc_max_burst"                                   "3"
-	"rest_time_between_bursts_min"                    "1.5" //"0.5"
+	"rest_time_between_bursts_min"                    "0.8" //"0.5"
 	"rest_time_between_bursts_max"                    "2.2" //"1"
+    "npc_vortex_block"	                              "1"
 
     // WeaponED Unhandled Key/Values and custom script Key/Values
     "vortex_absorb_sound"                             "Vortex_Shield_AbsorbBulletLarge"
     
     "critical_hit"                                 	  "1" //"0"
-    "viewdrift_hipfire_stand_scale_pitch"             "0.1"
-    "viewdrift_hipfire_crouch_scale_pitch"            "0.1"
-    "viewdrift_hipfire_air_scale_pitch"               "0.1"
-    "viewdrift_hipfire_stand_scale_yaw"               "0.075"
-    "viewdrift_hipfire_crouch_scale_yaw"              "0.075"
-    "viewdrift_hipfire_air_scale_yaw"                 "0.075"
-    "viewdrift_hipfire_speed_pitch"                   "0.6"
-    "viewdrift_hipfire_speed_yaw"                     "1.22"
-    "viewdrift_ads_stand_scale_pitch"                 "0.1"
-    "viewdrift_ads_crouch_scale_pitch"                "0.1"
-    "viewdrift_ads_air_scale_pitch"                   "0.1"
-    "viewdrift_ads_stand_scale_yaw"                   "0.075"
-    "viewdrift_ads_crouch_scale_yaw"                  "0.075"
-    "viewdrift_ads_air_scale_yaw"                     "0.075"
-    "viewdrift_ads_speed_pitch"                       "0.6"
-    "viewdrift_ads_speed_yaw"                         "1.22"
+    "viewdrift_hipfire_stand_scale_pitch"             "0.0" // "0.1"
+    "viewdrift_hipfire_crouch_scale_pitch"            "0.0" // "0.1"
+    "viewdrift_hipfire_air_scale_pitch"               "0.0" // "0.1"
+    "viewdrift_hipfire_stand_scale_yaw"               "0.0" // "0.075"
+    "viewdrift_hipfire_crouch_scale_yaw"              "0.0" // "0.075"
+    "viewdrift_hipfire_air_scale_yaw"                 "0.0" // "0.075"
+    "viewdrift_hipfire_speed_pitch"                   "0.0" // "0.6"
+    "viewdrift_hipfire_speed_yaw"                     "0.0" // "1.22"
+    "viewdrift_ads_stand_scale_pitch"                 "0.0" // "0.1"
+    "viewdrift_ads_crouch_scale_pitch"                "0.0" // "0.1"
+    "viewdrift_ads_air_scale_pitch"                   "0.0" // "0.1"
+    "viewdrift_ads_stand_scale_yaw"                   "0.0" // "0.075"
+    "viewdrift_ads_crouch_scale_yaw"                  "0.0" // "0.075"
+    "viewdrift_ads_air_scale_yaw"                     "0.0" // "0.075"
+    "viewdrift_ads_speed_pitch"                       "0.0" //  "0.6"
+    "viewdrift_ads_speed_yaw"                         "0.0" //  "1.22"
 
     // Crosshair
     "red_crosshair_range"                             "1500"
@@ -279,12 +280,16 @@ WeaponData
             "viewkick_yaw_base"                               "-0.0"
             "viewkick_yaw_random"                             "0.0"
 
-            //"damage_falloff_type"                            "linear"
+            //"damage_falloff_type"                         "linear"
             "damage_near_value_titanarmor"                  "300"
             "damage_far_value_titanarmor"                   "300"
-
             "explosion_damage"                              "75"
             "explosion_damage_heavy_armor"                  "300"
+
+            "npc_damage_near_value_titanarmor"              "100"
+            "npc_damage_far_value_titanarmor"               "100"
+            "npc_min_burst"   								"3"
+	        "npc_max_burst"   								"6"
 
             "explosion_inner_radius"                        "48"
             "explosionradius"                               "96"
@@ -299,12 +304,40 @@ WeaponData
 			"ammo_clip_size"   								"12"
 			"ammo_default_total"							"1500"
 		}
+
+		"shredder_rounds"
+		{
+            "fire_rate"                                      "8"
+            "burst_fire_delay"								 "0.6"
+
+            "damage_near_distance"                           "*0.6"
+            "damage_far_distance"                            "*0.6"
+            "npc_damage_near_distance"                       "*0.6"
+            "npc_damage_far_distance"                        "*0.6"
+
+            "damage_near_value_titanarmor"                   "*1.15"
+            "damage_far_value_titanarmor"                    "*1.15"
+
+            "npc_damage_near_value_titanarmor"               "*1.15"
+            "npc_damage_far_value_titanarmor"                "*1.15"
+
+
+            "reload_time"                                   "*0.85"
+            "reload_time_late1"                             "*0.85"
+            "reload_time_late2" 					    	"*0.85"
+            "reloadempty_time"                              "*0.85"
+            "reloadempty_time_late1"                        "*0.85"
+            "reloadempty_time_late2" 				    	"*0.85"
+		}
+
 		burn_mod_titan_shotgun
 		{
 			// TODO
-
 			"crosshair_index"								"2"
 			"is_burn_mod"									"1"
+
+            "fire_rate"                                       "7"
+            "fire_mode"                                       "auto"
 		}
     }
 

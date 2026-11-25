@@ -80,6 +80,396 @@ function InitScoreEvents()
 	event.SetShouldStackDisplay( true )
 	event.SetXPType( XP_TYPE.ROUND_COMPLETE )
 
+	//////////////////////////////////////////////////
+	//////////////// FO BONUS EVENTS /////////////////
+	//////////////////////////////////////////////////
+
+	event = cScoreEvent( "StealthBonus" )
+	event.SetPointValue( 0 )
+	event.SetSplashText( "Stealth Bonus%s1" ) 
+	// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+	event.SetShouldStackDisplay( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+
+	event = cScoreEvent( "StealthBonus_Burncard" )
+	event.SetPointValue( 0 )
+	event.SetSplashText( "Stealth Bonus%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+
+	event = cScoreEvent( "SavedFromRodeo_Spectre" )
+	event.SetPointValue( POINTVALUE_KILL_SPECTRE )
+	event.SetSplashText( "Killed Rodeo Spectre%s1" )
+	event.SetConversation( "RodeoRake", EVENT_PRIORITY_CALLOUTMINOR )
+	event.SetXPType( XP_TYPE.RODEO_RAKE )
+
+	//////// NPC PILOTS ////////
+
+	event = cScoreEvent( "KillReskinnedPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )  
+	event.SetSplashText( "Killed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.PILOT_KILL )  
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+
+	event = cScoreEvent( "KillReskinnedPilotGeneric" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )  
+	event.SetSplashText( "Killed Pilot%s1" )
+	event.SetSplashTextAppendTargetName( false )
+	event.SetXPType( XP_TYPE.PILOT_KILL )  
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+
+	event = cScoreEvent( "MeleeHumanVsReskinnedPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Jump Kicked %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "MeleeHumanExecutionVsReskinnedPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Executed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "TitanStepVsReskinnedPilot" )
+	event.SetPointValue( POINTVALUE_TITAN_STEPCRUSH_PILOT + POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Crushed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetConversation( "TitanStepCrush", EVENT_PRIORITY_CALLOUTMINOR )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "TerminationVsReskinnedPilot" )
+	event.SetPointValue( POINTVALUE_TITAN_MELEE_EXECUTION )
+	event.SetSplashText( "Terminated %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "Flipped_Spectre_KillReskinnedPilot" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_PILOT ) )
+	event.SetSplashText( "Flipped Spectre Killed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "Auto_Pilot_KillReskinnedPilot" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_PILOT ) )
+	event.SetSplashText( "Auto-Titan Killed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "AutoTurret_KillReskinnedPilot" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_PILOT ) )
+	event.SetSplashText( "Turret Killed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	//////// NPC GHOST PILOTS ////////
+
+	event = cScoreEvent( "KillGhostPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )  
+	event.SetSplashText( "Killed Ghost Pilot%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetXPType( XP_TYPE.PILOT_KILL )  
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+
+	event = cScoreEvent( "MeleeHumanVsGhostPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Jump Kicked Ghost Pilot%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "MeleeHumanExecutionVsGhostPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Executed Ghost Pilot%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "TitanStepVsGhostPilot" )
+	event.SetPointValue( POINTVALUE_TITAN_STEPCRUSH_PILOT + POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Crushed Ghost Pilot%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetSplashTextAppendTargetName( false )
+	event.SetConversation( "TitanStepCrush", EVENT_PRIORITY_CALLOUTMINOR )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "Flipped_Spectre_KillGhostPilot" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_PILOT ) )
+	event.SetSplashText( "Flipped Spectre Killed Ghost Pilot%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "Auto_Pilot_KillGhostPilot" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_PILOT ) )
+	event.SetSplashText( "Auto-Titan Killed Ghost Pilot%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "AutoTurret_KillGhostPilot" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_PILOT ) )
+	event.SetSplashText( "Turret Killed Ghost Pilot%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	/////// NPC PILOT BURN CARDS ////////
+
+	event = cScoreEvent( "BurnKillReskinnedPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )  
+	event.SetSplashText( "Killed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.PILOT_KILL )  
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+
+	event = cScoreEvent( "BurnMeleeHumanVsReskinnedPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Jump Kicked %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "BurnMeleeHumanExecutionVsReskinnedPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Executed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "BurnTitanStepVsReskinnedPilot" )
+	event.SetPointValue( POINTVALUE_TITAN_STEPCRUSH_PILOT + POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Crushed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetConversation( "TitanStepCrush", EVENT_PRIORITY_CALLOUTMINOR )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "BurnTitanMeleeVsReskinnedPilot" )
+	event.SetPointValue( POINTVALUE_TITAN_MELEE_VS_PILOT )
+	event.SetSplashText( "#SCORE_EVENT_PILOT_BEATDOWN" )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+
+	event = cScoreEvent( "BurnTerminationVsReskinnedPilot" )
+	event.SetPointValue( POINTVALUE_TITAN_MELEE_EXECUTION )
+	event.SetSplashText( "Terminated %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "BurnFlipped_Spectre_KillReskinnedPilot" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_PILOT ) )
+	event.SetSplashText( "Flipped Spectre Killed %s1" )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "BurnAuto_Pilot_KillReskinnedPilot" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_PILOT ) )
+	event.SetSplashText( "Auto-Titan Killed %s1" )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "BurnAutoTurret_KillReskinnedPilot" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_PILOT ) )
+	event.SetSplashText( "Turret Killed %s1" )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	/////// NPC GHOST PILOT BURN CARDS ////////
+
+	event = cScoreEvent( "BurnKillGhostPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )  
+	event.SetSplashText( "Killed Ghost Pilot%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetXPType( XP_TYPE.PILOT_KILL )  
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+
+	event = cScoreEvent( "BurnMeleeHumanVsGhostPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Jump Kicked Ghost Pilot%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "BurnMeleeHumanExecutionVsGhostPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Executed Ghost Pilot%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "BurnTitanStepVsGhostPilot" )
+	event.SetPointValue( POINTVALUE_TITAN_STEPCRUSH_PILOT + POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Crushed Ghost Pilot%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetSplashTextAppendTargetName( false )
+	event.SetConversation( "TitanStepCrush", EVENT_PRIORITY_CALLOUTMINOR )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "BurnFlipped_Spectre_KillGhostPilot" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_PILOT ) )
+	event.SetSplashText( "Flipped Spectre Killed Ghost Pilot%s1" )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetShouldStackDisplay( true )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "BurnAuto_Pilot_KillGhostPilot" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_PILOT ) )
+	event.SetSplashText( "Auto-Titan Killed Ghost Pilot%s1" )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetShouldStackDisplay( true )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "BurnAutoTurret_KillGhostPilot" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_PILOT ) )
+	event.SetSplashText( "Turret Killed Ghost Pilot%s1" )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetShouldStackDisplay( true )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	///////// GRUNT CAPTAINS /////////
+	
+	event = cScoreEvent( "KillCaptain" )
+	event.SetPointValue( POINTVALUE_KILL_GRUNT_CAPTAIN )  
+	event.SetSplashText( "Killed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+
+	event = cScoreEvent( "MeleeHumanVsCaptain" )
+	event.SetPointValue( POINTVALUE_KILL_GRUNT_CAPTAIN )
+	event.SetSplashText( "Jump Kicked %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+
+	event = cScoreEvent( "MeleeHumanExecutionVsCaptain" )
+	event.SetPointValue( POINTVALUE_KILL_GRUNT_CAPTAIN )
+	event.SetSplashText( "Executed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+
+	event = cScoreEvent( "TitanStepVsCaptain" )
+	event.SetPointValue( POINTVALUE_TITAN_STEPCRUSH + POINTVALUE_KILL_GRUNT_CAPTAIN )
+	event.SetSplashText( "Crushed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+
+	event = cScoreEvent( "TerminationVsCaptain" )
+	event.SetPointValue( POINTVALUE_TITAN_MELEE_EXECUTION )
+	event.SetSplashText( "Terminated %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+
+	event = cScoreEvent( "BurnTerminationVsCaptain" )
+	event.SetPointValue( POINTVALUE_TITAN_MELEE_EXECUTION )
+	event.SetSplashText( "Terminated %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+
+	event = cScoreEvent( "Flipped_Spectre_KillCaptain" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_GRUNT_CAPTAIN ) )
+	event.SetSplashText( "Flipped Spectre Killed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+
+	event = cScoreEvent( "Auto_Pilot_KillCaptain" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_GRUNT_CAPTAIN ) )
+	event.SetSplashText( "Auto-Titan Killed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+
+	event = cScoreEvent( "AutoTurret_KillCaptain" )
+	event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_KILL_GRUNT_CAPTAIN ) )
+	event.SetSplashText( "Turret Killed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+
+	event = cScoreEvent( "KillCaptainGeneric" )
+	event.SetPointValue( POINTVALUE_KILL_GRUNT_CAPTAIN )  
+	event.SetSplashText( "Killed Grunt Captain%s1" )
+	event.SetSplashTextAppendTargetName( false )
+	event.SetXPType( XP_TYPE.NPC_KILL )  
+
+	///////// KNIFE KILLS /////////
+
+	event = cScoreEvent( "KnifeVsGrunt" )
+	event.SetPointValue( POINTVALUE_KILL_FIRETEAM_AI )
+	event.SetSplashText( "Knifed Grunt%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+
+	event = cScoreEvent( "KnifeVsCaptain" )
+	event.SetPointValue( POINTVALUE_KILL_FIRETEAM_AI )
+	event.SetSplashText( "Knifed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+
+	event = cScoreEvent( "KnifeVsSpectre" )
+	event.SetPointValue( POINTVALUE_KILL_SPECTRE )
+	event.SetSplashText( "Knifed Spectre%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+
+	event = cScoreEvent( "KnifeVsSniper_Spectre" )
+	event.SetPointValue( POINTVALUE_KILL_SPECTRE )
+	event.SetSplashText( "Knifed Sniper Spectre%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+
+	event = cScoreEvent( "KnifeVsSuicide_Spectre" )
+	event.SetPointValue( POINTVALUE_KILL_SPECTRE )
+	event.SetSplashText( "Knifed Suicide Spectre%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+
+	event = cScoreEvent( "KnifeVsReskinnedPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Knifed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "KnifeVsGhostPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Knifed Ghost Pilot%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "KnifeVsPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Knifed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "BurnKnifeVsReskinnedPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Knifed %s1" )
+	event.SetSplashTextAppendTargetName( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	event = cScoreEvent( "BurnKnifeVsGhostPilot" )
+	event.SetPointValue( POINTVALUE_KILL_PILOT )
+	event.SetSplashText( "Knifed Ghost Pilot%s1" )
+	event.SetShouldStackDisplay( true )
+	event.SetScoreSplashColors( SCORE_SPLASH_COLORS_BURNCARDS )
+	event.SetXPType( XP_TYPE.PILOT_KILL )
+
+	/////////////////////////////////////////////////
+
 	event = cScoreEvent( "Kill" )
 	event.SetPointValue( POINTVALUE_KILL )
 	event.SetSplashText( "#SCORE_EVENT_KILLED_ENEMY" )
@@ -534,6 +924,12 @@ function InitScoreEvents()
 	event.SetSplashText( "#SCORE_EVENT_KILLED_DRONE" )
 	event.SetXPType( XP_TYPE.NPC_KILL )
 
+	event = cScoreEvent( "KillCombatDrone" )
+	event.SetPointValue( POINTVALUE_KILL_COMBAT_DRONE )
+	event.SetSplashText( "Killed Combat Drone%s1" )
+	event.SetXPType( XP_TYPE.NPC_KILL )
+	event.SetShouldStackDisplay( true )
+	
 	event = cScoreEvent( "DroppodKill" )
 	event.SetPointValue( POINTVALUE_DROPPOD_KILL )
 	event.SetSplashText( "#SCORE_EVENT_DROPPOD_SMASH_KILL" )
@@ -1177,7 +1573,7 @@ function InitScoreEvents()
 	event.SetSplashText( "#SCORE_EVENT_FIRST_TITANFALL" )
 	event.SetXPType( XP_TYPE.TITANFALL )
 
-//EVAC
+	//EVAC
 	event = cScoreEvent( "GetToChopper" )
 	event.SetPointValue( POINTVALUE_GET_TO_CHOPPER )
 	event.SetSplashText( "#SCORE_EVENT_GET_TO_THE_CHOPPER" )
@@ -1291,28 +1687,28 @@ function InitScoreEvents()
 		event.SetSplashText( "#SCORE_EVENT_COOP_KILL_NUKE_TITAN" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.TITAN_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Auto_Titan_Killed_Nuke_Titan" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_NUKE_TITAN ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_AUTO_TITAN_KILL_NUKE_TITAN" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.TITAN_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Flipped_Spectre_Killed_Nuke_Titan" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_NUKE_TITAN ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_FLIPPED_SPECTRE_KILL_NUKE_TITAN" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.TITAN_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Auto_Turret_Killed_Nuke_Titan" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_NUKE_TITAN ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_AUTO_TURRET_KILL_NUKE_TITAN" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.TITAN_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 	//COOP Mortar Titan
 		event = cScoreEvent( "Killed_Mortar_Titan" )
@@ -1320,28 +1716,28 @@ function InitScoreEvents()
 		event.SetSplashText( "#SCORE_EVENT_COOP_KILL_MORTAR_TITAN" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.TITAN_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Auto_Titan_Killed_Mortar_Titan" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_MORTAR_TITAN ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_AUTO_TITAN_KILL_MORTAR_TITAN" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.TITAN_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Flipped_Spectre_Killed_Mortar_Titan" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_MORTAR_TITAN ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_FLIPPED_SPECTRE_KILL_MORTAR_TITAN" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.TITAN_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Auto_Turret_Killed_Mortar_Titan" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_MORTAR_TITAN ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_AUTO_TURRET_KILL_MORTAR_TITAN" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.TITAN_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 	//COOP EMP Titan
 		event = cScoreEvent( "Killed_EMP_Titan" )
@@ -1349,93 +1745,123 @@ function InitScoreEvents()
 		event.SetSplashText( "#SCORE_EVENT_COOP_KILL_EMP_TITAN" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.TITAN_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Auto_Titan_Killed_EMP_Titan" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_EMP_TITAN ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_AUTO_TITAN_KILL_EMP_TITAN" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.TITAN_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Flipped_Spectre_Killed_EMP_Titan" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_EMP_TITAN ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_FLIPPED_SPECTRE_KILL_EMP_TITAN" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.TITAN_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Auto_Turret_Killed_EMP_Titan" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_EMP_TITAN ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_AUTO_TURRET_KILL_EMP_TITAN" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.TITAN_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
-	//COOP Suicide Spectre
+		/// Suicide Spectre
 		event = cScoreEvent( "Killed_Suicide_Spectre" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_SUICIDE_SPECTRE ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_KILL_SUICIDE_SPECTRE" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.NPC_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+
+		event = cScoreEvent( "MeleeHumanExecutionVsSuicideSpectre" )
+		event.SetPointValue( POINTVALUE_KILL_SPECTRE )
+		event.SetSplashText( "Executed Suicide Spectre%s1" )
+		event.SetShouldStackDisplay( true )
+		event.SetXPType( XP_TYPE.NPC_KILL )
+
+		event = cScoreEvent( "NeutralizedSuicideSpectre" )
+		event.SetPointValue( POINTVALUE_KILL_SPECTRE )
+		event.SetSplashText( "Neutralized Suicide Spectre%s1" )
+		event.SetShouldStackDisplay( true )
+		event.SetXPType( XP_TYPE.NPC_KILL )
+
+		event = cScoreEvent( "TitanStepCrush_Killed_Suicide_Spectre" )
+		event.SetPointValue( POINTVALUE_TITAN_STEPCRUSH + POINTVALUE_KILL_SPECTRE )
+		event.SetSplashText( "Crushed Suicide Spectre%s1" )
+		event.SetShouldStackDisplay( true )
+		event.SetXPType( XP_TYPE.NPC_KILL )
 
 		event = cScoreEvent( "Auto_Titan_Killed_Suicide_Spectre" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_SUICIDE_SPECTRE ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_AUTO_TITAN_KILL_SUICIDE_SPECTRE" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.NPC_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Flipped_Spectre_Killed_Suicide_Spectre" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_SUICIDE_SPECTRE ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_FLIPPED_SPECTRE_KILL_SUICIDE_SPECTRE" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.NPC_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Auto_Turret_Killed_Suicide_Spectre" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_SUICIDE_SPECTRE ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_AUTO_TURRET_KILL_SUICIDE_SPECTRE" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.NPC_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
-	//COOP Sniper Spectre
+		/// SNIPER SPECTRE
 		event = cScoreEvent( "Killed_Sniper_Spectre" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_SNIPER_SPECTRE ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_KILL_SNIPER_SPECTRE" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.NPC_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+
+		event = cScoreEvent( "MeleeHumanVsSniper_Spectre" )
+		event.SetPointValue( POINTVALUE_KILL_SPECTRE )
+		event.SetSplashText( "Jump Kicked Sniper Spectre%s1" )
+		event.SetShouldStackDisplay( true )
+		event.SetXPType( XP_TYPE.NPC_KILL )
 
 		event = cScoreEvent( "Auto_Titan_Killed_Sniper_Spectre" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_SNIPER_SPECTRE ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_AUTO_TITAN_KILL_SNIPER_SPECTRE" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.NPC_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Flipped_Spectre_Killed_Sniper_Spectre" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_SNIPER_SPECTRE ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_FLIPPED_SPECTRE_KILL_SNIPER_SPECTRE" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.NPC_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Auto_Turret_Killed_Sniper_Spectre" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_SNIPER_SPECTRE ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_AUTO_TURRET_KILL_SNIPER_SPECTRE" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.NPC_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+
+		event = cScoreEvent( "MeleeHumanExecutionVsSniper_Spectre" )
+		event.SetPointValue( POINTVALUE_KILL_SPECTRE )
+		event.SetSplashText( "Executed Sniper Spectre%s1" )
+		event.SetShouldStackDisplay( true )
+		event.SetXPType( XP_TYPE.NPC_KILL )
 
 		event = cScoreEvent( "TitanStepCrush_Killed_Sniper_Spectre" )
 		event.SetPointValue( POINTVALUE_TITAN_STEPCRUSH + POINTVALUE_KILL_SPECTRE )
 		event.SetSplashText( "#SCORE_EVENT_COOP_CRUSHED_SNIPER_SPECTRE" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.NPC_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 	//COOP Bubble Shield Spectre
 		event = cScoreEvent( "Killed_Bubble_Shield_Spectre" )
@@ -1494,34 +1920,35 @@ function InitScoreEvents()
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.NPC_KILL )
 		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
-	//COOP Cloaking Drone
+
+		//COOP Cloaking Drone
 		event = cScoreEvent( "Killed_Cloaking_Drone" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_CLOAKING_DRONE ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_KILL_CLOAKING_DRONE" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.NPC_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Auto_Titan_Killed_Cloaking_Drone" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_CLOAKING_DRONE ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_AUTO_TITAN_KILL_CLOAKING_DRONE" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.NPC_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Flipped_Spectre_Killed_Cloaking_Drone" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_CLOAKING_DRONE ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_FLIPPED_SPECTRE_KILL_CLOAKING_DRONE" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.NPC_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 		event = cScoreEvent( "Auto_Turret_Killed_Cloaking_Drone" )
 		event.SetPointValue( ScaleScoreForAutoTitan( POINTVALUE_COOP_KILL_CLOAKING_DRONE ) )
 		event.SetSplashText( "#SCORE_EVENT_COOP_AUTO_TURRET_KILL_CLOAKING_DRONE" )
 		event.SetShouldStackDisplay( true )
 		event.SetXPType( XP_TYPE.NPC_KILL )
-		event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
+		// event.SetScoreSplashColors( SCORE_SPLASH_COLORS_PLAYERKILLS )
 
 	event = cScoreEvent( "CoopTurretKillStreak" )
 	event.SetPointValue( POINTVALUE_COOP_TURRET_KILL_STREAK )
@@ -1558,6 +1985,7 @@ function InitScoreEvents()
 	event.SetPointValue( POINTVALUE_CONTROL_PANEL_ACTIVATE )
 	event.SetSplashText( "#SCORE_EVENT_LEECHED_UPLINK_PANEL" )
 	event.SetXPType( XP_TYPE.HACKING )
+
 }
 
 function ScaleScoreForAutoTitan( eventPoints )
@@ -1594,7 +2022,7 @@ function ScoreEventFromInteger( integer )
 
 function ScoreEventExists( eventName )
 {
-	return event in level.scoreEventsByName
+    return eventName in level.scoreEventsByName
 }
 
 function ScoreEventForTitanEntityKilled( titan, inflictor, damageSourceId )
@@ -1681,6 +2109,7 @@ function ScoreEventForTitanEntityKilled( titan, inflictor, damageSourceId )
 		else if ( IsEMPTitan( titan ) )
 			return "Killed_EMP_Titan"
 	}
+
 	//Default case
 	return "KillTitan"
 }
@@ -1734,6 +2163,12 @@ function ScoreEventForMethodOfDeath( player, damageInfo )
 	local inflictor = damageInfo.GetInflictor()
 	inflictor = InflictorOwner( inflictor ) // turns env_explosion into a player or npc
 
+	local attacker = GetAttackerOrLastAttacker( player, damageInfo )
+    attacker = GetAttackerPlayerOrBossPlayer( attacker )
+	local activeWeapon = null
+	if ( IsValid( attacker ) )
+		activeWeapon = attacker.GetActiveWeapon()
+
 	if ( inflictor )
 	{
 		if ( IsTitanNPC( inflictor ) )
@@ -1759,7 +2194,10 @@ function ScoreEventForMethodOfDeath( player, damageInfo )
 
 	if ( damageSourceId == eDamageSourceId.human_melee )
 	{
-		return  "MeleeHumanAttackVsPilot"
+    	if ( IsValid( activeWeapon ) && activeWeapon.GetClassname() == "mp_weapon_throwing_knife" )
+            return "KnifeVsPilot"
+        else
+			return  "MeleeHumanAttackVsPilot"
 	}
 
 	if ( damageSourceId == eDamageSourceId.human_execution )
@@ -1782,19 +2220,266 @@ function ScoreEventForMethodOfDeath( player, damageInfo )
 		return "TitanStepCrushPilot"
 	}
 
+	if ( damageSourceId == eDamageSourceId.mp_weapon_throwing_knife )
+	{
+		return "KnifeVsPilot"
+	}
+
 	return scoreEvent
 }
 
 function ScoreEventForNPCKilled(npc, damageInfo)
 {
-	local scoreEvent
-	local inflictor = damageInfo.GetInflictor()
-	inflictor = InflictorOwner( inflictor ) // turns env_explosion into a player or npc
+    local scoreEvent
+    local inflictor = damageInfo.GetInflictor()
+    inflictor = InflictorOwner( inflictor )
+    
+    local damageSourceId = damageInfo.GetDamageSourceIdentifier()
+    local npcClass = npc.GetClassname()
 
-	local damageSourceId = damageInfo.GetDamageSourceIdentifier()
+    //////////////////////////////////////////////////
+    ////////// SUPER HACKY NPC "PILOT" LOGIC /////////
+    //////////////////////////////////////////////////
 
-	local classname = npc.GetClassname()
-	switch ( classname )
+    local attacker = GetAttackerOrLastAttacker( npc, damageInfo )
+    attacker = GetAttackerPlayerOrBossPlayer( attacker )
+	local activeWeapon = null
+	if ( IsValid( attacker ) )
+		activeWeapon = attacker.GetActiveWeapon()
+
+    if ( IsReskinnedPilot( npc ) )
+    {
+
+		if ( ( inflictor ) && ( PlayerHasServerFlag( attacker, SFLAG_HUNTER_PILOT ) || PlayerHasServerFlag( attacker, SFLAG_DOUBLE_XP ) ) )
+		{
+			if ( IsTitanNPC( inflictor ) )
+				return "BurnAuto_Pilot_KillReskinnedPilot"
+
+			if ( IsPlayerControlledSpectre( inflictor ) )
+				return "BurnFlipped_Spectre_KillReskinnedPilot"
+
+			if ( IsPlayerControlledTurret( inflictor ) )
+				return "BurnAutoTurret_KillReskinnedPilot"
+		}
+		else if ( inflictor )
+		{
+			if ( IsTitanNPC( inflictor ) )
+				return "Auto_Pilot_KillReskinnedPilot"
+
+			if ( IsPlayerControlledSpectre( inflictor ) )
+				return "Flipped_Spectre_KillReskinnedPilot"
+
+			if ( IsPlayerControlledTurret( inflictor ) )
+				return "AutoTurret_KillReskinnedPilot"
+		}
+
+        if ( ( PlayerHasServerFlag( attacker, SFLAG_HUNTER_PILOT ) || PlayerHasServerFlag( attacker, SFLAG_DOUBLE_XP ) ) )
+        {
+            if ( damageSourceId == eDamageSourceId.human_execution )
+                return "BurnMeleeHumanExecutionVsReskinnedPilot"
+            else if ( damageSourceId == eDamageSourceId.mp_weapon_throwing_knife )
+                return "BurnKnifeVsReskinnedPilot"
+            else if ( damageSourceId == eDamageSourceId.human_melee )
+            {
+                if ( IsValid( activeWeapon ) && activeWeapon.GetClassname() == "mp_weapon_throwing_knife" )
+                    return "BurnKnifeVsReskinnedPilot"
+                else
+                    return "BurnMeleeHumanVsReskinnedPilot"
+            }
+            else if ( damageSourceId == eDamageSourceId.titan_step )
+                return "BurnTitanStepVsReskinnedPilot"
+            else if ( damageSourceId == eDamageSourceId.titan_melee )
+                return "BurnKillReskinnedPilot"
+            else
+                return "BurnKillReskinnedPilot"
+        }
+        else
+        {
+            if ( damageSourceId == eDamageSourceId.human_execution )
+                return "MeleeHumanExecutionVsReskinnedPilot"
+            else if ( damageSourceId == eDamageSourceId.mp_weapon_throwing_knife )
+                return "KnifeVsReskinnedPilot"
+            else if ( damageSourceId == eDamageSourceId.human_melee )
+            {
+                if ( IsValid( activeWeapon ) && activeWeapon.GetClassname() == "mp_weapon_throwing_knife" )
+                    return "KnifeVsReskinnedPilot"
+                else
+                    return "MeleeHumanVsReskinnedPilot"
+            }
+            else if ( damageSourceId == eDamageSourceId.titan_step )
+                return "TitanStepVsReskinnedPilot"
+            else if ( damageSourceId == eDamageSourceId.titan_melee )
+                return "KillReskinnedPilot"
+            else
+                return "KillReskinnedPilot"
+        }
+    }
+
+    if ( IsGhostPilot( npc ) )
+    {
+		if ( ( inflictor ) && ( PlayerHasServerFlag( attacker, SFLAG_HUNTER_PILOT ) || PlayerHasServerFlag( attacker, SFLAG_DOUBLE_XP ) ) )
+		{
+			if ( IsTitanNPC( inflictor ) )
+				return "BurnAuto_Pilot_KillGhostPilot"
+
+			if ( IsPlayerControlledSpectre( inflictor ) )
+				return "BurnFlipped_Spectre_KillGhostPilot"
+
+			if ( IsPlayerControlledTurret( inflictor ) )
+				return "BurnAutoTurret_KillGhostPilot"
+		}
+		else if ( inflictor )
+		{
+			if ( IsTitanNPC( inflictor ) )
+				return "Auto_Pilot_KillGhostPilot"
+
+			if ( IsPlayerControlledSpectre( inflictor ) )
+				return "Flipped_Spectre_KillGhostPilot"
+
+			if ( IsPlayerControlledTurret( inflictor ) )
+				return "AutoTurret_KillGhostPilot"
+		}
+
+        if ( ( PlayerHasServerFlag( attacker, SFLAG_HUNTER_PILOT ) || PlayerHasServerFlag( attacker, SFLAG_DOUBLE_XP ) ) )
+        {
+            if ( damageSourceId == eDamageSourceId.human_execution )
+                return "BurnMeleeHumanExecutionVsGhostPilot"
+            else if ( damageSourceId == eDamageSourceId.mp_weapon_throwing_knife )
+                return "BurnKnifeVsGhostPilot"
+            else if ( damageSourceId == eDamageSourceId.human_melee )
+            {
+                if ( IsValid( activeWeapon ) && activeWeapon.GetClassname() == "mp_weapon_throwing_knife" )
+                    return "BurnKnifeVsGhostPilot"
+                else
+                    return "BurnMeleeHumanVsGhostPilot"
+            }
+            else if ( damageSourceId == eDamageSourceId.titan_step )
+                return "BurnTitanStepVsGhostPilot"
+            else if ( damageSourceId == eDamageSourceId.titan_melee )
+                return "BurnKillGhostPilot"
+            else
+                return "BurnKillGhostPilot"
+        }
+        else
+        {
+            if ( damageSourceId == eDamageSourceId.human_execution )
+                return "MeleeHumanExecutionVsGhostPilot"
+            else if ( damageSourceId == eDamageSourceId.mp_weapon_throwing_knife )
+                return "KnifeVsGhostPilot"
+            else if ( damageSourceId == eDamageSourceId.human_melee )
+            {
+                if ( IsValid( activeWeapon ) && activeWeapon.GetClassname() == "mp_weapon_throwing_knife" )
+                    return "KnifeVsGhostPilot"
+                else
+                    return "MeleeHumanVsGhostPilot"
+            }
+            else if ( damageSourceId == eDamageSourceId.titan_step )
+                return "TitanStepVsGhostPilot"
+            else if ( damageSourceId == eDamageSourceId.titan_melee )
+                return "KillGhostPilot"
+            else
+                return "KillGhostPilot"
+        }
+    }
+
+	////////////////////////////////////////////////////
+	///////////// SAME FOR GRUNT CAPTAINS //////////////
+	////////////////////////////////////////////////////
+	if ( IsGruntCaptain( npc ) )
+	{
+		if ( inflictor )
+		{
+			if ( IsTitanNPC( inflictor ) )
+				return "Auto_Pilot_KillCaptain"
+
+			if ( IsPlayerControlledSpectre( inflictor ) )
+				return "Flipped_Spectre_KillCaptain"
+
+			if ( IsPlayerControlledTurret( inflictor ) )
+				return "AutoTurret_KillCaptain"
+		}
+
+		if ( damageSourceId == eDamageSourceId.human_execution )
+			return "MeleeHumanExecutionVsCaptain"
+		else if ( damageSourceId == eDamageSourceId.titan_step )
+			return "TitanStepVsCaptain"
+		else if ( damageSourceId == eDamageSourceId.mp_weapon_throwing_knife )
+			return "KnifeVsCaptain"
+		else if ( damageSourceId == eDamageSourceId.human_melee )
+		{
+			if ( IsValid( activeWeapon ) && activeWeapon.GetClassname() == "mp_weapon_throwing_knife" )
+				return "KnifeVsCaptain"
+			else
+				return "MeleeHumanVsCaptain"
+		}
+		else
+			return "KillCaptain"
+	}
+		
+	////////////////////////////////////////////////////
+	///////////// AND THE SPECTRE VARIANTS /////////////
+	////////////////////////////////////////////////////
+
+	if ( IsSniperSpectre( npc ) )
+	{
+		if ( damageSourceId == eDamageSourceId.human_execution )
+			return "MeleeHumanExecutionVsSniper_Spectre"
+		else if ( damageSourceId == eDamageSourceId.mp_weapon_throwing_knife )
+			return "KnifeVsSniper_Spectre"
+		else if ( damageSourceId == eDamageSourceId.human_melee )
+		{
+			if ( IsValid( activeWeapon ) && activeWeapon.GetClassname() == "mp_weapon_throwing_knife" )
+				return "KnifeVsSniper_Spectre"
+			else
+				return "MeleeHumanVsSniper_Spectre"
+		}
+		else if ( damageSourceId == eDamageSourceId.titan_step )
+			return "TitanStepCrush_Killed_Sniper_Spectre"
+		else
+			return "Killed_Sniper_Spectre"
+	}
+
+	if ( IsSuicideSpectre( npc ) )
+	{
+		switch( damageSourceId )
+		{
+			case eDamageSourceId.mp_weapon_grenade_emp:
+			case eDamageSourceId.mp_weapon_proximity_mine:
+			case eDamageSourceId.mp_titanweapon_arc_cannon:
+			case eDamageSourceId.mp_titanability_smoke:
+			case eDamageSourceId.mp_ability_emp:
+			case eDamageSourceId.mp_titanability_emp:
+			case eDamageSourceId.super_electric_smoke_screen:
+			case eDamageSourceId.grunt_melee:
+			case eDamageSourceId.spectre_melee:
+			case eDamageSourceId.titan_fall:
+			case eDamageSourceId.bubble_shield:
+			case eDamageSourceId.switchback_trap:
+			case eDamageSourceId.titanEmpField:
+			case eModSourceId.burn_mod_titan_xo16:
+				return "NeutralizedSuicideSpectre"
+		}
+
+		if ( damageSourceId == eDamageSourceId.human_execution )
+			return "MeleeHumanExecutionVsSuicideSpectre"
+		if ( damageSourceId == eDamageSourceId.mp_weapon_throwing_knife )
+			return "KnifeVsSuicide_Spectre"
+		else if ( damageSourceId == eDamageSourceId.human_melee )
+		{
+			if ( IsValid( activeWeapon ) && activeWeapon.GetClassname() == "mp_weapon_throwing_knife" )
+				return "KnifeVsSuicide_Spectre"
+			else
+				return "NeutralizedSuicideSpectre"
+		}
+		else if ( damageSourceId == eDamageSourceId.titan_step )
+			return "TitanStepCrush_Killed_Suicide_Spectre"
+		else
+			return "Killed_Suicide_Spectre"
+	}
+
+	//////////////////////////////////////////////////////
+
+	switch ( npcClass )
 	{
 		case "npc_turret_mega":
 		case "npc_turret_mega_bb":
@@ -1833,66 +2518,57 @@ function ScoreEventForNPCKilled(npc, damageInfo)
 			{
 				if ( IsTitanCrushDamage( damageInfo ) )
 				{
-					if ( GAMETYPE == COOPERATIVE )
-					{
-						if ( IsSniperSpectre( npc ) )
-							return "TitanStepCrush_Killed_Sniper_Spectre"
-					}
-					return "TitanStepCrush_"+ scoreEvent
+					if ( IsSniperSpectre( npc ) )
+						return "TitanStepCrush_Killed_Sniper_Spectre"
+					else
+						return "TitanStepCrush_"+ scoreEvent
 				}
 
 				if ( IsTitanNPC( inflictor ) )
 				{
-					if ( GAMETYPE == COOPERATIVE )
-					{
-						if ( IsSuicideSpectre( npc ) )
-							return "Auto_Titan_Killed_Suicide_Spectre"
-						else if ( IsSniperSpectre( npc ) )
-							return "Auto_Titan_Killed_Sniper_Spectre"
-						else if ( IsBubbleShieldMinion( npc ) )
-							return "Auto_Titan_Killed_Bubble_Shield_Spectre"
-					}
-					return  "Auto_Pilot_" + scoreEvent
+
+					if ( IsSuicideSpectre( npc ) )
+						return "Auto_Titan_Killed_Suicide_Spectre"
+					else if ( IsSniperSpectre( npc ) )
+						return "Auto_Titan_Killed_Sniper_Spectre"
+					else if ( IsBubbleShieldMinion( npc ) )
+						return "Auto_Titan_Killed_Bubble_Shield_Spectre"
+					else
+						return "Auto_Pilot_" + scoreEvent
 				}
 
 				if ( IsPlayerControlledSpectre( inflictor) )
 				{
-					if ( GAMETYPE == COOPERATIVE )
-					{
-						if ( IsSuicideSpectre( npc ) )
-							return "Flipped_Spectre_Killed_Suicide_Spectre"
-						else if ( IsSniperSpectre( npc ) )
-							return "Flipped_Spectre_Killed_Sniper_Spectre"
-						else if ( IsBubbleShieldMinion( npc ) )
-							return "Flipped_Spectre_Killed_Bubble_Shield_Spectre"
-					}
-					return  "Flipped_Spectre_" + scoreEvent
+					if ( IsSuicideSpectre( npc ) )
+						return "Flipped_Spectre_Killed_Suicide_Spectre"
+					else if ( IsSniperSpectre( npc ) )
+						return "Flipped_Spectre_Killed_Sniper_Spectre"
+					else if ( IsBubbleShieldMinion( npc ) )
+						return "Flipped_Spectre_Killed_Bubble_Shield_Spectre"			
+					else
+						return "Flipped_Spectre_" + scoreEvent
 				}
 
 				if ( IsPlayerControlledTurret( inflictor ) )
 				{
-					if ( GAMETYPE == COOPERATIVE )
-					{
-						if ( IsSuicideSpectre( npc ) )
-							return "Auto_Turret_Killed_Suicide_Spectre"
-						else if ( IsSniperSpectre( npc ) )
-							return "Auto_Turret_Killed_Sniper_Spectre"
-						else if ( IsBubbleShieldMinion( npc ) )
-							return "Auto_Turret_Killed_Bubble_Shield_Spectre"
-					}
-
-					return "AutoTurret_" + scoreEvent
+					if ( IsSuicideSpectre( npc ) )
+						return "Auto_Turret_Killed_Suicide_Spectre"
+					else if ( IsSniperSpectre( npc ) )
+						return "Auto_Turret_Killed_Sniper_Spectre"
+					else if ( IsBubbleShieldMinion( npc ) )
+						return "Auto_Turret_Killed_Bubble_Shield_Spectre"
+					else
+						return "AutoTurret_" + scoreEvent
 				}
 
-	            if ( GAMETYPE == COOPERATIVE )
-	            {
-					if ( IsSuicideSpectre( npc ) )
-			            return scoreEvent = "Killed_Suicide_Spectre"
-					else if ( IsSniperSpectre( npc ) )
-						return "Killed_Sniper_Spectre"
-		            else if ( IsBubbleShieldMinion( npc ) )
-			            return scoreEvent = "Killed_Bubble_Shield_Spectre"
-	            }
+	            // if ( GAMETYPE == COOPERATIVE )
+
+				if ( IsSuicideSpectre( npc ) )
+			        return scoreEvent = "Killed_Suicide_Spectre"
+				else if ( IsSniperSpectre( npc ) )
+					return "Killed_Sniper_Spectre"
+	            else if ( IsBubbleShieldMinion( npc ) )
+		            return scoreEvent = "Killed_Bubble_Shield_Spectre"
 
 				if ( damageSourceId == eDamageSourceId.super_electric_smoke_screen )
 				{
@@ -1903,10 +2579,19 @@ function ScoreEventForNPCKilled(npc, damageInfo)
 				{
 					return  "MeleeHumanExecutionVsSpectre"
 				}
+				
+				if ( damageSourceId == eDamageSourceId.mp_weapon_throwing_knife )
+					return "KnifeVsSpectre"
 
 				if ( damageSourceId == eDamageSourceId.human_melee )
 				{
-					return  "MeleeHumanAttackVsSpectre"
+					if ( IsValid( attacker ) && attacker.IsPlayer() )
+					{
+						if ( IsValid( activeWeapon ) && activeWeapon.GetClassname() == "mp_weapon_throwing_knife" )
+							return "KnifeVsSpectre"
+					}
+					else
+						return  "MeleeHumanAttackVsSpectre"
 				}
 
 			}
@@ -1940,7 +2625,8 @@ function ScoreEventForNPCKilled(npc, damageInfo)
 				{
 					if ( IsBubbleShieldMinion( npc ) )
 						return "Auto_Titan_Killed_Bubble_Shield_Grunt"
-				}
+				}	
+					
 				return "Auto_Pilot_" + scoreEvent
 			}
 
@@ -1951,7 +2637,8 @@ function ScoreEventForNPCKilled(npc, damageInfo)
 					if ( IsBubbleShieldMinion( npc ) )
 						return "Flipped_Spectre_Killed_Bubble_Shield_Grunt"
 				}
-				return  "Flipped_Spectre_" + scoreEvent
+
+				return "Flipped_Spectre_" + scoreEvent
 			}
 
 			if ( IsPlayerControlledTurret( inflictor ) )
@@ -1964,7 +2651,8 @@ function ScoreEventForNPCKilled(npc, damageInfo)
 				//if ( IsAlive( inflictor.GetParent() ) )
 				//	return "AerialEscort_" + scoreEvent
 				//else
-					return "AutoTurret_" + scoreEvent
+	
+				return "AutoTurret_" + scoreEvent
 			}
 
 			if ( GAMETYPE == COOPERATIVE )
@@ -1980,13 +2668,21 @@ function ScoreEventForNPCKilled(npc, damageInfo)
 					scoreEvent = "Electrocute_IMC_Soldier"
 			}
 
+			if ( damageSourceId == eDamageSourceId.mp_weapon_throwing_knife )
+				return "KnifeVsGrunt"
+
 			if ( damageSourceId == eDamageSourceId.human_melee )
 			{
-				scoreEvent =  "MeleeHumanAttackVsGrunt"
+				if ( IsValid( attacker ) && attacker.IsPlayer() )
+				{
+					if ( IsValid( activeWeapon ) && activeWeapon.GetClassname() == "mp_weapon_throwing_knife" )
+						return "KnifeVsGrunt"
+				}
+
+				scoreEvent = "MeleeHumanAttackVsGrunt"
 				if ( npc.GetTeam() == TEAM_IMC )
 					scoreEvent = "MeleeHumanAttackVs_IMC_Soldier"
 			}
-
 			if ( damageSourceId == eDamageSourceId.human_execution )
 			{
 				scoreEvent =  "MeleeHumanExecutionVsGrunt"

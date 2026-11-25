@@ -7152,7 +7152,8 @@ function TitanMoshPit_SpawnTitans_OrForceStandDown( endSig )
 
 	level.moshPitTitans = [];
 	local soul = level.player.GetTitanSoul()
-	soul.SetShieldHealth(soul.GetShieldHealthMax())
+	if ( IsValid( soul ) )
+		soul.SetShieldHealth(soul.GetShieldHealthMax())
 
 	ForcePlayConversationToPlayer( "titan_mosh_wave_survived", level.player )
 	wait 8
@@ -7187,7 +7188,8 @@ function TitanMoshPit_SpawnTitans_OrForceStandDown( endSig )
 
 	level.moshPitTitans = [];
 	local soul = level.player.GetTitanSoul()
-	soul.SetShieldHealth(soul.GetShieldHealthMax())
+	if ( IsValid( soul ) )
+		soul.SetShieldHealth(soul.GetShieldHealthMax())
 
 	ForcePlayConversationToPlayer( "titan_mosh_wave_survived", level.player )
 	wait 8
@@ -7222,7 +7224,8 @@ function TitanMoshPit_SpawnTitans_OrForceStandDown( endSig )
 
 	level.moshPitTitans = [];
 	local soul = level.player.GetTitanSoul()
-	soul.SetShieldHealth(soul.GetShieldHealthMax())
+	if ( IsValid( soul ) )
+		soul.SetShieldHealth(soul.GetShieldHealthMax())
 
 	ForcePlayConversationToPlayer( "titan_mosh_wave_survived", level.player )
 	wait 8

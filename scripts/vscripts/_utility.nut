@@ -1,5 +1,5 @@
 //=========================================================
-//	_utility
+//	_utility FO
 //
 //=========================================================
 
@@ -3399,8 +3399,15 @@ function DrawTracerOverTime( origin, vector, time )
 //------------------------------------------------------------
 function CreatePropDynamic( model, origin = null, angles = null, solidType = 0, fadeDist = -1 )
 {
-	local prop_dynamic = CreateEntity( "prop_dynamic" )
-	prop_dynamic.kv.model = model
+	if ( typeof model != "string" || model == "" )
+    {
+        printl( "WARNING: CreatePropDynamic called with invalid model: " + model )
+        model = "models/dev/empty_model.mdl" // Fallback to a safe model
+    }
+
+    local prop_dynamic = CreateEntity( "prop_dynamic" )
+    prop_dynamic.__KeyValueFromString( "model", model )
+	
 	prop_dynamic.kv.fadedist = fadeDist
 	prop_dynamic.kv.renderamt = 255
 	prop_dynamic.kv.rendercolor = "255 255 255"
@@ -6017,169 +6024,3 @@ function SetPlayerSetFile( player, classSettings )
 		printt( "WARNING - Could not determine correct model name for player " + player + " using playerSetFile '" + classSettings + "' and field '" + modelFieldName + "'" )
 	}
 }
-
-// Based on: https://github.com/p2r3/ppmod/blob/f4dc3f80a0ee0bc60bbd672a7667d72702bdbb44/ppmod.nut#L2080
-// DO NOT use CreateBrush to create collision blockers, theyre not predicted properly
-function CreateBrush( origin, angles, size, type = "func_brush", name = "" )
-{
-	if ( size.x < 0.0 || size.y < 0.0 || size.z < 0.0 )
-		throw "brush: Size must be positive on all axis"
-
-	local brush = CreateEntity( type )
-
-	if ( name != "" )
-		brush.SetName( name )
-	else
-		brush.SetName( UniqueString( type ) )
-
-	if ( origin )
-	{
-		// hack: Setting origin twice. SetOrigin needs to happen before DispatchSpawn, otherwise the prop may not touch triggers
-		brush.SetOrigin( origin )
-		if ( angles )
-			brush.SetAngles( angles )
-	}
-	DispatchSpawn( brush )
-	if ( origin )
-	{
-		// hack: Setting origin twice. SetOrigin needs to happen after DispatchSpawn, otherwise origin is snapped to nearest whole unit
-		brush.SetOrigin( origin )
-		if ( angles )
-			brush.SetAngles( angles )
-	}
-
-	// Make the brush solid and rotatable
-	brush.SetValueForKey( "Solid", 3 )
-	// Scale the bounding box of the brush, centered on its origin
-	brush.SetSize( Vector() - size, size )
-
-	brush.s.size <- size
-
-	if ( !( "scriptCreatedBrushes" in level ) )
-		level.scriptCreatedBrushes <- []
-
-	level.scriptCreatedBrushes.append( brush )
-	brush.ConnectOutput( "OnDestroy", RemoveScriptBrush )
-
-	//DebugDrawBox( origin, Vector() - size, size, 255, 0, 0, 1, 6 )
-	//brush.ConnectOutput( "OnStartTouch", ScriptBrushEnter )
-	//brush.ConnectOutput( "OnEndTouch", ScriptBrushExit )
-
-	return brush
-}
-
-function CreateTrigger( origin, angles, size, type = "trigger_multiple", name = "" )
-{
-	local trigger = CreateBrush( origin, angles, size, type, name )
-
-	// Make the trigger non-solid
-	trigger.SetValueForKey( "CollisionGroup", 21 )
-	// Turn on activation by clients by default
-	trigger.SetValueForKey( "SpawnFlags", 1 )
-
-	EntFireByHandle( trigger, "Enable", "", 0.0, null, null )
-
-	// If this is a trigger_once, make it disappear upon activation
-	if ( type == "trigger_once" )
-		trigger.AddOutput( "OnStartTouch", "!self", "Kill" )
-
-	return trigger
-}
-
-function CreateTriggerOutOfBounds( origin, angles, size, name = "" )
-{
-	local trigger = CreateTrigger( origin, angles, size, "trigger_out_of_bounds", name )
-	trigger.ConnectOutput( "OnStartTouch", EntityOutOfBounds )
-	trigger.ConnectOutput( "OnEndTouch", EntityBackInBounds )
-
-	return trigger
-}
-
-// damageSource can be either: "fall" "splat" "burn" or "submerged" <- this doesnt seem to work properly
-function CreateTriggerHurt( origin, angles, size, damage = 0, damageSource = "", name = "" )
-{
-	local trigger = CreateTrigger( origin, angles, size, "trigger_hurt", name )
-	trigger.SetValueForKey( "damage", damage )
-	trigger.SetValueForKey( "damageSourceName", damageSource )
-
-	InitDamageTriggers( trigger )
-
-	return trigger
-}
-
-function CreateTriggerCapturePoint( origin, angles, size, name = "" )
-{
-	local trigger = CreateTrigger( origin, angles, size, "trigger_capture_point", name )
-	trigger.SetValueForKey( "SpawnFlags", 3 )
-
-	return trigger
-}
-
-function CreateTriggerIndoors( origin, angles, size, name = "" )
-{
-	local trigger = CreateTrigger( origin, angles, size, "trigger_indoor_area", name )
-	trigger.SetValueForKey( "SpawnFlags", 3 )
-
-	return trigger
-}
-
-function CreateTriggerWeaponless( origin, angles, size, name = "" )
-{
-	local trigger = CreateTrigger( origin, angles, size, "trigger_weaponless", name )
-	return trigger
-}
-
-function RemoveScriptBrush( trigger, entity, caller, value )
-{
-	ArrayRemove( level.scriptCreatedBrushes, trigger )
-}
-
-// Not really accurate if the brush is rotated at all
-function ShowScriptCreatedBrushes( duration = 5.0, opacity = 0 )
-{
-	if ( !( "scriptCreatedBrushes" in level ) )
-		return
-
-	local color
-	foreach( brush in level.scriptCreatedBrushes )
-	{
-		switch ( brush.GetClassname() )
-		{
-			case "trigger_out_of_bounds":
-				color = [ 255, 255, 0 ]
-				break
-
-			case "trigger_hurt":
-				color = [ 255, 0, 0 ]
-				break
-
-			case "trigger_capture_point":
-				color = [ 180, 0, 255 ]
-				break
-
-			case "trigger_indoor_area":
-				color = [ 128, 128, 128 ]
-				break
-
-			default:
-				color = [ 0, 255, 0 ]
-				break
-		}
-
-		DebugDrawBox( brush.GetOrigin(), Vector() - brush.s.size, brush.s.size, color[0], color[1], color[2], opacity, duration )
-	}
-}
-
-function ScriptBrushEnter( trigger, entity, caller, value )
-{
-	printt( "entity", entity, "entered script brush", trigger.GetName() )
-}
-
-function ScriptBrushExit( trigger, entity, caller, value )
-{
-	printt( "entity", entity, "exited script brush", trigger.GetName() )
-}
-
-// Shortcuts for the console
-gent <- GetEnt
-genta <- GetEntArrayByClass_Expensive

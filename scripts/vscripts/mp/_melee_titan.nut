@@ -1,4 +1,4 @@
-if ( IsServer() )
+if ( IsServer() ) // FO
 {
 	RAGDOLL_IMPACT_TABLE_IDX <- PrecacheImpactEffectTable( "ragdoll_human" )
 }
@@ -67,38 +67,30 @@ function MeleeThread_TitanVsTitan_Internal( actions, action, attacker, target )
 
 	// should rename TitanType
 	local titanType = GetSoulTitanType(attacker.GetTitanSoul())
-	// if target is an NPC with no pilot, use NPC-specific handler (Atlas NPC handler kept)
+	
+	// Identify the default, safe execution for the attacker's chassis
+	local defaultFunc = MeleeThread_AtlasVsTitan
+	if ( titanType == "stryder" )
+		defaultFunc = MeleeThread_StryderVsTitan
+	else if ( titanType == "ogre" )
+		defaultFunc = MeleeThread_OgreVsTitan
+
 	if ( target.IsNPC() && !TitanHasPilotInTitan( target ) )
 	{
 		func = MeleeThread_AtlasVsTitanNPC
 	}
 	else
 	{
-		// Map titan type to the matching execution func
-		switch( titanType )
-		{
-			case "atlas":
-				func = MeleeThread_AtlasVsTitan
-				break
-			case "stryder":
-				func = MeleeThread_StryderVsTitan
-				break
-			case "ogre":
-				func = MeleeThread_OgreVsTitan
-				break
-			default:
-				// fallback to atlas if unknown
-				func = MeleeThread_AtlasVsTitan
-				break
-		}
+		// Choose one of the titan execution handlers at random
+		local execList = [ MeleeThread_AtlasVsTitan, MeleeThread_StryderVsTitan, MeleeThread_OgreVsTitan ]
+		func = Random( execList )
 
-		// If attacker is player, ensure the viewmodel has the required first-person anim,
-		// otherwise fall back to the chassis default.
 		if ( attacker.IsPlayer() )
 		{
 			local viewmodel = attacker.GetFirstPersonProxy()
 			local requiredAnim = ""
-
+			
+			// Map the selected function to the first-person animation it requires
 			if ( func == MeleeThread_OgreVsTitan )
 				requiredAnim = "ogpov_melee_armrip_attacker"
 			else if ( func == MeleeThread_StryderVsTitan )
@@ -106,12 +98,11 @@ function MeleeThread_TitanVsTitan_Internal( actions, action, attacker, target )
 			else if ( func == MeleeThread_AtlasVsTitan )
 				requiredAnim = "atpov_melee_sync_frontkill"
 
+			// If the viewmodel is missing the animation, fallback to default
 			if ( IsValid( viewmodel ) && requiredAnim != "" && !viewmodel.Anim_HasSequence( requiredAnim ) )
 			{
-				// viewmodel doesn't have anim; fall back to the titan-type default func (already chosen above),
-				// or you can force atlas here: func = MeleeThread_AtlasVsTitan
-				printt( "Viewmodel missing anim: " + requiredAnim + ". Using default: " + titanType + "." )
-				// (nothing to do — func already maps by titanType)
+				printt( "Viewmodel missing anim: " + requiredAnim + ". Falling back to " + titanType + " default." )
+				func = defaultFunc
 			}
 		}
 	}
@@ -122,7 +113,32 @@ function MeleeThread_TitanVsTitan_Internal( actions, action, attacker, target )
 	attacker.PlayerMelee_ExecutionStartAttacker( 0 )
 	target.PlayerMelee_ExecutionStartTarget( attacker )
 
+	local hadPilot = false
+	local isCaptain = false
+
+	if ( typeof( TitanHasPilotInTitan ) == "function" )
+		hadPilot = TitanHasPilotInTitan( target )
+	else if ( "pilotedtitans" in file )
+		hadPilot = ( target in file.pilotedtitans )
+
+	if ( "pilotIsNPCCaptain" in target.s )
+		isCaptain = target.s.pilotIsNPCCaptain
+
+	local awardAttrition = ( func == MeleeThread_OgreVsTitan )
+
+	// Atlas/Stryder: the Titan can be destroyed before the Pilot prop is killed, so by the time this
+	// function resumes the Titan is invalid and the splash has no name. The prop pays the "Terminated"
+	// splash itself when it dies (see PilotPropTerminated in _score.nut), while it is still valid.
+	local propPaysTermination = ( ( func == MeleeThread_AtlasVsTitan || func == MeleeThread_StryderVsTitan ) && target.IsNPC()
+		&& ( "pilotIsNPCCaptain" in target.s || "isFO_Titan" in target.s ) )
+
 	waitthread func( actions, action, attacker, target )
+
+	if ( propPaysTermination )
+		return
+
+	printt( "Titan execution finished: hadPilot=" + hadPilot + " isCaptain=" + isCaptain + " attackerValid=" + IsValid( attacker ) )
+	thread AwardPilotTermination( attacker, IsValid( target ) ? target : null, hadPilot, isCaptain, awardAttrition )
 }
 
 
@@ -336,7 +352,7 @@ function MeleeThread_TitanRipsPilot( e, actions, action, attacker, target )
 	if ( target.IsPlayer() )
 	    attackerViewBody = Wallrun_CreateCopyOfPilotModel( target )
 	else
-	    attackerViewBody = NPC_CreateCopyOfPilotModel( target )
+	    attackerViewBody = CreateCopyOfPilotModel( target )
 	attackerViewBody.SetOrigin( ref.GetOrigin() )
 	e.attackerViewBody = attackerViewBody
 	attackerViewBody.SetOwner( attacker )
@@ -409,7 +425,19 @@ function MeleeThread_TitanRipsPilot( e, actions, action, attacker, target )
 	    prop.SetOrigin( target.GetOrigin() )
 	    prop.SetInvulnerable()
 	    prop.SetTeam( target.GetTeam() )
+
+		local pilotName = target.GetName()
+		prop.SetTitle( pilotName )
+		prop.SetName( pilotName )
+		prop.s.pilotName <- pilotName
+
 	    prop.SetModel( attackerViewBody.GetModelName() )
+
+		if ( ( "pilotIsNPCCaptain" in target.s) || ( "isFO_Titan" in target.s ) )
+		{
+			prop.s.isPilotProp <- true
+			prop.s.pilotPropIsCaptain <- ( "pilotIsNPCCaptain" in target.s )
+		}
 	}
 
 	local soul = targetTitan.GetTitanSoul()
@@ -432,9 +460,10 @@ function MeleeThread_TitanRipsPilot( e, actions, action, attacker, target )
 	}
 	else if ( IsValid( prop ) )
 	{
-	    prop.SetOwner( attacker )
-	    prop.kv.VisibilityFlags = 6 //owner cant see
-	    target = prop
+		prop.SetOwner( attacker )
+		prop.kv.VisibilityFlags = 6 //owner cant see
+		targetTitan.s.pilotHandledByExecution <- true   // Titan death must not pay pilot bonus
+		target = prop
 	}
 	e.targetTitan <- targetTitan
 	if ( GameRules.GetGameMode() == ATTRITION )
@@ -841,7 +870,7 @@ function MeleeThread_OgreVsTitan( actions, action, attacker, target )
 	target.s.isRodeoEnabled = false
 
 	OnThreadEnd(
-		function() : ( ref, attacker, target, e  )
+		function() : ( ref, attacker, target, e )
 		{
 			if ( IsValid( ref ) )
 			{

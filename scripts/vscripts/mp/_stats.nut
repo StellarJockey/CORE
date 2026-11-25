@@ -730,7 +730,8 @@ function HandleKillStats( victim, attacker, damageInfo ) {
         if(victim.IsPlayer())
             Stats_IncrementStat( attacker, "game_stats", "pvp_kills_by_mode", 1 )
 
-        if(IsPilot(victim))
+        local isNPCPilot = (IsReskinnedPilot(victim) || IsGhostPilot(victim))
+        if ( IsPilot( victim ) || isNPCPilot )
         {
             Stats_IncrementStat( attacker, "kills_stats", "totalPilots", 1 )
 
@@ -745,7 +746,7 @@ function HandleKillStats( victim, attacker, damageInfo ) {
             Stats_IncrementStat( attacker, "kills_stats", "totalNPC", 1 )
         if ( victim.IsSpectre() )
             Stats_IncrementStat( attacker, "kills_stats", "spectres", 1 )
-        if ( victim.IsSoldier() )
+        if ( victim.IsSoldier() || IsGruntCaptain( victim ) )
             Stats_IncrementStat( attacker, "kills_stats", "grunts", 1 )
         if ( victim.IsMarvin() )
             Stats_IncrementStat( attacker, "kills_stats", "marvins", 1 )
@@ -950,11 +951,14 @@ function HandleWeaponKillStats( victim, attacker, damageInfo ) {
             }
 
             Stats_IncrementStat( attacker, "weapon_kill_stats","total" , 1.0, source )
-            if(IsPilot(victim))
+
+            local isNPCPilot = ( IsReskinnedPilot( victim ) || IsGhostPilot( victim ) )
+            
+            if(IsPilot(victim) || isNPCPilot)
                 Stats_IncrementStat( attacker, "weapon_kill_stats","pilots" , 1.0, source )
             if ( victim.IsSpectre())
 			    Stats_IncrementStat( attacker, "weapon_kill_stats", "spectres", 1.0 ,source)
-		    if ( victim.IsSoldier() )
+		    if ( victim.IsSoldier() || IsGruntCaptain( victim ) )
 			    Stats_IncrementStat( attacker, "weapon_kill_stats", "grunts", 1.0,source )
             if ( victim.IsMarvin() )
                 Stats_IncrementStat( attacker, "weapon_kill_stats", "marvins", 1.0,source )

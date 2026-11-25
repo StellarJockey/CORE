@@ -1,9 +1,10 @@
 //=========================================================
-// MP ai functions for game modes
+// MP ai functions for game modes FO
 //
 //=========================================================
 
 RegisterSignal( "spotted_by_ai" )
+IncludeFile( "mp/_ai_npc_titans" )
 
 const FRONTLINE_MIN_DIST_SQR		= 262144	// 512
 const FRONTLINE_MAX_DIST_SQR		= 16777216	// 4096
@@ -11,6 +12,8 @@ const FRONTLINE_NPC_SPAWN_OFFSET	= 0			// min distance away from the frontline t
 const FRONTLINE_PLAYER_SPAWN_OFFSET	= 256		// min distance away from the frontline that a player will spawn.
 const FRONTLINE_PLAYER_SPAWN_DIST	= 1536		// distance where the spawn score is at it's highest
 const FRONTLINE_PLAYER_SPAWN_HEIGHT	= 320		//
+const CTF_DEBUG                     = false		// set false to silence diagnostic prints for release
+const CTF_FAKECAP_ENABLED           = true		// master switch for scripted grunt captures
 
 const KPS_TIMEFRAME = 20.0			// timeframe in seconds to count death per second within.
 const PLAYER_KPS_TIMEFRAME = 60.0	// timeframe in seconds to count death per second within. The goal is to kill 50% of the total player count per team
@@ -21,9 +24,11 @@ const PLAYER_KPS_LIMIT = 0.75		// fraction of player count needed to be killed w
 const MID_SPEC_MAX_AI_COUNT = 9		// max number of AI per side when playing on less then high-end machines (durango)
 const MID_SPEC_PLAYER_CUTOFF = 8	// treat the server as high-end when the player count is less or equal to this.
 
+
 function main()
 {
 	Globalize( SetupTeamDeathmatchNPCs )
+	Globalize( Coop_OnPlayerOrNPCKilled )
 	Globalize( SquadAssaultFrontline )
 	Globalize( SquadAssault )
 	Globalize( SpawnFrontlineSquad )
@@ -42,6 +47,14 @@ function main()
 
 	Globalize( Spawn_TrackedGrunt )
 	Globalize( Spawn_TrackedSpectre )
+	PrecacheModel( "models/robots/agp/agp_hemlok_larger.mdl" )
+	Minimap_PrecacheMaterial( "vgui/hud/cloak_drone_minimap_orange" )
+	Minimap_PrecacheMaterial( "vgui/hud/cloak_drone_minimap" )
+	Minimap_PrecacheMaterial( "vgui/hud/combat_drone_minimap_orange" )
+	Minimap_PrecacheMaterial( "vgui/hud/combat_drone_minimap" )
+	Minimap_PrecacheMaterial( "vgui/hud/gunship_minimap_orange" )
+	Minimap_PrecacheMaterial( "vgui/hud/gunship_minimap" )
+
 	Globalize( GetIndexSmallestSquad )
 	Globalize( TryGetSmallestValidSquad )
 	Globalize( SquadValidForClass )
@@ -53,9 +66,25 @@ function main()
 	Globalize( SetLevelAICount )
 
 	FlagInit( "FrontlineInitiated" )
+	FlagInit( "IntroMilitiaNPCsSpawned" )
 	RegisterSignal( "FreeAISlotsUpdated" )
 
+	// Per-squad signals for SquadFlagRunThink. level.aiSquadCount is 3 by default; register
+	// a safe upper bound of 8 per team to accommodate any future bump without code changes.
+	for ( local i = 0; i < 8; i++ )
+	{
+		RegisterSignal( "SquadHardpointRunThink_squad_imc" + i )
+		RegisterSignal( "SquadHardpointRunThink_squad_militia" + i )
+	}
+
 	level.max_npc_per_side <- 12
+	level.max_npc_per_side_small <- 9
+	level.max_npc_per_side_large <- 15
+
+	level.aiSpottingEnabled <- true  // Can be disabled per-mode
+	level.aiHuntThinkEnabled <- true
+	level.aiSpottedPlayers <- {}    // Global spotted player tracking
+	level.hardpointAssignments <- {}
 
 	level.occupiedAISlots <- {}
 	level.occupiedAISlots[TEAM_IMC] <- 0
@@ -72,42 +101,7 @@ function main()
 	level.midSpecAICount[ TEAM_IMC ] <- level.max_npc_per_side
 	level.midSpecAICount[ TEAM_MILITIA ] <- level.max_npc_per_side
 
-	level.npcRespawnWait <- 5
-
-	local npcPerSide = level.max_npc_per_side
-	switch( GameRules.GetGameMode() )
-	{
-		case TEAM_DEATHMATCH:
-			level.npcRespawnWait = 5
-			break
-		case ATTRITION:
-			level.npcRespawnWait = 5
-			break
-		case LAST_TITAN_STANDING:
-		case WINGMAN_LAST_TITAN_STANDING:
-		case TITAN_BRAWL:
-		case TURBO_TITAN_BRAWL:
-		case TURBO_TITAN_FFA:
-		case TITAN_FFA:
-		case TITAN_MFD:
-		case TITAN_MFD_PRO:
-			level.npcRespawnWait = 5
-			npcPerSide = GetCPULevelWrapper() == CPU_LEVEL_HIGHEND ? level.max_npc_per_side : 9
-			break
-		case CAPTURE_THE_FLAG:
-		case CAPTURE_THE_FLAG_PRO:
-			level.npcRespawnWait = 10
-			npcPerSide = 9
-			break
-	}
-
-	SetGameModeAICount( npcPerSide, TEAM_IMC )
-	SetGameModeAICount( npcPerSide, TEAM_MILITIA )
-
-	SetMidSpecAICount( MID_SPEC_MAX_AI_COUNT, TEAM_IMC )
-	SetMidSpecAICount( MID_SPEC_MAX_AI_COUNT, TEAM_MILITIA )
-
-	SetupLevelAICount()
+	level.npcRespawnWait <- 10
 
 	level.modifyAISlots <- {}
 	level.modifyAISlots[TEAM_IMC] <- 0
@@ -115,10 +109,13 @@ function main()
 
 	level.reservedAISquadSlots <- {}
 	level.dropship_team <- 0
-	level.aiSquadCount <- 3
+	level.aiSquadCount <- 6
 	level.aiSpawnCounter <- {}
 	level.aiSpawnCounter[ TEAM_IMC ] <- 0
 	level.aiSpawnCounter[ TEAM_MILITIA ] <- 0
+
+	// Start with the normal caps (12/9). AdjustNPCSpawns() raises them if need be
+	UpdateNPCCaps( false )
 
 	// debug stuff
 	Globalize( DebugSendClientFrontline )
@@ -131,9 +128,9 @@ function main()
 	Globalize( DrawMapCenter )
 	Globalize( MoveBot )
 
-	file.botIndex <- 
+	file.botIndex <-
 	{
-	 	[TEAM_IMC] = 0, 
+	 	[TEAM_IMC] = 0,
 	 	[TEAM_MILITIA] = 0
 	}
 
@@ -158,13 +155,117 @@ function main()
 	SpawnPoints_SetRatingMultipliers_Enemy( TD_AI, -2.0, -0.25, 0.0 )
 	SpawnPoints_SetRatingMultipliers_Friendly( TD_AI, 0.5, 0.25, 0.0 )
 
-	AddSpawnCallback( "npc_titan", SetupFakePilotValues )
-	AddDamageByCallback( "npc_titan", TryNPCTitanExecution )
+	// NEW: DRONES OUTSIDE COOP MODE
+	local mode = GameRules.GetGameMode()
+	if ( mode != COOPERATIVE && mode != TITAN_BRAWL && mode != LAST_TITAN_STANDING && mode != PILOT_SKIRMISH )
+	{
+		IncludeFile( "mp/_cloak_drone_alt" )
+		IncludeFile( "mp/_ai_gunship" )
+		IncludeFile( "mp/_ai_combat_drone" )
+		level.cloakedDronesManagedEntArrayID <- CreateScriptManagedEntArray()
+		level.cloakedDroneClaimedSquadList <- {}
+		RegisterSignal( "DroneCleanup" )
+	}
+	if ( mode == CAPTURE_THE_FLAG || mode == CAPTURE_THE_FLAG_PRO )
+	{
+		IncludeFile( "mp/_ai_capture_the_flag" )
+	}
+	if ( mode == COOPERATIVE )
+	{
+		thread Coop_SpawnTitansAfterDelay()
+	}
+
+	thread AdjustNPCSpawns()
+}
+
+// Per-gamemode NPC count (also sets the per-gamemode respawn wait). Depends on the current cap.
+function GetGameModeNPCPerSide()
+{
+	local npcPerSide = level.max_npc_per_side
+	switch( GameRules.GetGameMode() )
+	{
+		case TITAN_BRAWL:
+		case TURBO_TITAN_BRAWL:
+		case TURBO_TITAN_FFA:
+		case TITAN_FFA:
+			npcPerSide = 0
+			break
+
+		case PILOT_SKIRMISH:
+			npcPerSide = 0
+			break
+
+		case TEAM_DEATHMATCH:
+			level.npcRespawnWait = 5
+			break
+
+		case ATTRITION:
+		case CAPTURE_POINT:
+			level.npcRespawnWait = 10
+			break
+
+		case LAST_TITAN_STANDING:
+		case WINGMAN_LAST_TITAN_STANDING:
+		case TITAN_MFD:
+		case TITAN_MFD_PRO:
+			level.npcRespawnWait = 5
+			npcPerSide = GetCPULevelWrapper() == CPU_LEVEL_HIGHEND ? level.max_npc_per_side : 9
+			break
+
+		case CAPTURE_THE_FLAG:
+		case CAPTURE_THE_FLAG_PRO:
+			level.npcRespawnWait = 10
+			npcPerSide = min( 18, level.max_npc_per_side )	// clamp: the Set*AICount asserts reject > max
+			break
+	}
+	return npcPerSide
+}
+
+// Only touches the AI COUNT settings. Safe to call repeatedly.
+function UpdateNPCCaps( usePilots )
+{
+	// Change the caps first: the Set*AICount asserts compare against level.max_npc_per_side
+	level.max_npc_per_side = usePilots ? 24 : 12
+	level.max_npc_per_side_small = usePilots ? 20 : 9
+	level.max_npc_per_side_large = usePilots ? 28 : 16
+
+	local npcPerSide = GetGameModeNPCPerSide()
+
+	foreach ( team in [ TEAM_IMC, TEAM_MILITIA ] )
+	{
+		SetGameModeAICount( npcPerSide, team )
+		SetMidSpecAICount( MID_SPEC_MAX_AI_COUNT, team )
+	}
+
+	SetupLevelAICount()	// sets levelAICount for both teams (per-map overrides included)
+}
+
+function AdjustNPCSpawns()
+{
+	FlagWait( "GamePlaying" )
+	wait 5.0	// give players/bots time to connect
+
+	local lastState = false	// matches the normal caps main() already applied
+	while ( true )
+	{
+		local state = ShouldUseNPCPilots()
+		if ( state != lastState )
+		{
+			UpdateNPCCaps( state )
+			lastState = state
+		}
+		wait 5.0
+	}
+}
+
+function Coop_OnPlayerOrNPCKilled( entity, attacker, damageInfo )
+{
+    return
 }
 
 function SetupLevelAICount()
 {
-	local aiCount = level.max_npc_per_side	// 12
+	local aiCount = level.max_npc_per_side
 
 	switch ( GetMapName() )
 	{
@@ -173,28 +274,106 @@ function SetupLevelAICount()
 		case "mp_corporate":
 		case "mp_nexus":
 		case "mp_rise":
-		case "mp_outpost_207":
-		case "mp_fracture":
-		case "mp_relic":
 		case "mp_o2":
 		case "mp_training_ground":
-			// leave at 12
+		case "mp_swampland":
+		case "mp_runoff":
+		case "mp_wargames":
+		case "mp_sandtrap":
+		case "mp_harmony_mines":
+		case "mp_haven":
+		case "mp_nest2":
+		case "mp_mia":
+			break
+
+		// Start with default, that way one of the extra drop pods doesn't land on Captain Dunnam in the MCOR intro
+		case "mp_fracture":
+			if ( !Flag( "GamePlaying" ) )
+			{
+				aiCount = 12
+				thread RestoreAICount()
+			}
 			break
 
 		case "mp_angel_city":
 		case "mp_lagoon":
+		case "mp_outpost_207":
 		case "mp_colony":
+		case "mp_colony02":
+		case "mp_relic":
+		case "mp_relic02":
 		case "mp_overlook":
 		case "mp_smugglers_cove":
-			aiCount = 9
+		case "mp_switchback":
+		case "mp_zone_18":
+		case "mp_backwater":
+			aiCount = level.max_npc_per_side_small
 			break
 
-			//aiCount = 6
-			//break
+		case "mp_crashsite3":
+		case "mp_black_water_canal":
+		case "mp_complex3":
+		case "mp_drydock":
+		case "mp_eden":
+		case "mp_forwardbase_kodai":
+		case "mp_glitch":
+		case "mp_homestead":
+		case "mp_grave":
+		case "mp_thaw":
+			aiCount = level.max_npc_per_side_large
+			break
+
+		case "mp_box":
+			aiCount = 12
+			break
+
+		case "mp_npe":
+			aiCount = 16
+			break
+
 	}
+
+	aiCount = min( aiCount, level.max_npc_per_side )
 
 	SetLevelAICount( aiCount, TEAM_MILITIA )
 	SetLevelAICount( aiCount, TEAM_IMC )
+
+	RefreshSquadCount()
+}
+
+function RestoreAICount() // FOR FRACTURE
+{
+	FlagWait( "GamePlaying" )
+
+	wait 15.0
+
+	SetLevelAICount( level.max_npc_per_side, TEAM_MILITIA )
+	SetLevelAICount( level.max_npc_per_side, TEAM_IMC )
+
+	RefreshSquadCount()
+}
+
+const MAX_SQUADS_PER_TEAM = 8	// must match the number of SquadHardpointRunThink signals registered in main()
+
+// Number of squads needed to hold 'aiCount' NPCs with at most SQUAD_SIZE each (rounds UP).
+function GetSquadCountForAI( aiCount )
+{
+	local squads = ( aiCount + SQUAD_SIZE - 1 ) / SQUAD_SIZE	// integer ceiling
+	return min( MAX_SQUADS_PER_TEAM, max( 1, squads ) )
+}
+
+// Derives level.aiSquadCount from the AI count that will actually be spawned.
+// Mid-match it only ever GROWS: shrinking would orphan NPCs sitting in squads above the new count.
+function RefreshSquadCount()
+{
+	local aiCount = 0
+	foreach ( team in [ TEAM_IMC, TEAM_MILITIA ] )
+		aiCount = max( aiCount, min( level.levelAICount[ team ], level.gameModeAICount[ team ] ) )
+
+	local newCount = GetSquadCountForAI( aiCount )
+
+	if ( !Flag( "GamePlaying" ) || newCount > level.aiSquadCount )
+		level.aiSquadCount = newCount
 }
 
 function GetMaxAICount( team )
@@ -235,7 +414,10 @@ function SetMidSpecAICount( count, team )
 function GetSpawnSquadSize( team )
 {
 	local maxAICount = GetMaxAICount( team )
-	local squadSize = max( 1, floor( maxAICount / 3 ) )	// 3 is the number of squads we have per side.
+
+	local numberOfSquads = max( 1, floor( (maxAICount + SQUAD_SIZE - 1).tofloat() / SQUAD_SIZE ) )
+	local squadSize = max( 1, floor( maxAICount.tofloat() / numberOfSquads ) )
+
 	return min( squadSize, SQUAD_SIZE )	// never higher then SQUAD_SIZE, it's the max we can spawn with droppods
 }
 
@@ -330,6 +512,34 @@ function IsClassInReservedAISquadSlots_ForSquadName( squadName, npcClass )
 	return false
 }
 
+function SpawnPilotAI( team, squadName, origin, angles, alert = true )
+{
+    local pilotmodels = file.pilotmodels
+    if ( team == TEAM_MILITIA )
+        pilotmodels = file.militiapilotmodels
+    else if ( team == TEAM_IMC )
+        pilotmodels = file.imcpilotmodels
+
+    local pilot = CreateEntity( "npc_soldier" )
+    DispatchSpawn( pilot )
+    pilot.SetOrigin( origin )
+    pilot.SetTeam( team )
+    pilot.SetModel( Random( pilotmodels ) )
+    SetNPCAsPilot( pilot, true )
+
+	if ( "s" in pilot && "IsSoldier" in pilot.s )
+			pilot.s.IsSoldier <- false
+	pilot.s.isPilot <- true
+	
+    GiveMinionWeapon( pilot, "mp_weapon_rspn101" )
+    pilot.SetMaxHealth( 200 )
+    pilot.SetHealth( 200 )
+    if ( squadName != null )
+        SetSquad( pilot, squadName )
+    return pilot
+}
+Globalize( SpawnPilotAI )
+
 function Spawn_TrackedSpectre( team, squadName, origin, angles, alert = true, weapon = null, hidden = false )
 {
 	local spectre = SpawnSpectre( team, squadName, origin, angles, alert, weapon, hidden )
@@ -356,6 +566,11 @@ function Spawn_TrackedGrunt( team, squadName, origin, angles, alert = true )
 	return soldier
 }
 
+function Spawn_TrackedDropPodPilotSquad( team, count, spawnPoint, squadName = null )
+{
+    return Spawn_TrackedDropPodSquad( "npc_soldier", team, count, spawnPoint, squadName, false, SpawnPilotAI )
+}
+Globalize( Spawn_TrackedDropPodPilotSquad )
 
 function Spawn_TrackedDropPodGruntSquad( team, count, spawnPoint, squadName = null )
 {
@@ -557,7 +772,7 @@ function Spawn_TrackedZipLineSquad( ai_type, spawnPoint, dropTable, force = fals
 {
 	if(!spawnPoint)
 		return
-	
+
 	local team 		= dropTable.team
 	local count 	= dropTable.count
 	local squadname = dropTable.squadname
@@ -611,7 +826,6 @@ function FreeAISlotOnDeathThread( soldier )
 }
 
 
-
 //////////////////////////////////////////////////////////
 function SetupTeamDeathmatchNPCs()
 {
@@ -626,29 +840,98 @@ function SetupTeamDeathmatchNPCs()
 			wait waitTime
 
 		thread TeamDeathmatchSpawnNPCsThink()
-	}
+    }
 }
 
 function TeamDeathmatchSpawnNPCsThink()
 {
-	local teams = [TEAM_IMC, TEAM_MILITIA]
-	local extraGrunts
+    while ( GetGameState() < eGameState.Playing )
+    {
+        wait 1
+    }
 
-	while ( IsNPCSpawningEnabled() )
+    // Clear campaign-specific disable flags
+    if ( GetCurrentPlaylistName() == "campaign_carousel" )
+    {
+        if ( Flag( "Disable_IMC" ) ) FlagClear( "Disable_IMC" )
+        if ( Flag( "Disable_MILITIA" ) ) FlagClear( "Disable_MILITIA" )
+    }
+
+    local teams = [TEAM_IMC, TEAM_MILITIA]
+    local mode = GameRules.GetGameMode()
+    local extraGrunts = 0
+    
+    if ( !( "modifyAISlots" in level ) )
+        level.modifyAISlots <- { [TEAM_IMC] = 0, [TEAM_MILITIA] = 0 }
+
+	// TITAN SPAWNING
+	function IsTitanMode( mode )
 	{
-		extraGrunts = GetGruntBonusForTeam( TEAM_IMC )
-
-		level.modifyAISlots[ TEAM_IMC ] = extraGrunts * -1
-		level.modifyAISlots[ TEAM_MILITIA ] = extraGrunts
-
-		if ( !Flag( "Disable_IMC" ) )
-			thread TeamDeathmatchSpawnNPCs( TEAM_IMC )
-
-		if ( !Flag( "Disable_MILITIA" ) )
-			thread TeamDeathmatchSpawnNPCs( TEAM_MILITIA )
-
-		wait level.npcRespawnWait
+		switch( mode )
+		{
+			case ATTRITION:
+			case CAPTURE_POINT:
+			case TEAM_DEATHMATCH:
+			case TITAN_BRAWL:
+			case TURBO_TITAN_BRAWL:
+			case TURBO_TITAN_FFA:
+			case TITAN_FFA:
+			case LAST_TITAN_STANDING:
+			case CAPTURE_THE_FLAG:
+			case COOPERATIVE:
+				return true
+		}
+		return false
 	}
+
+	if ( !Flag("Disable_IMC") && IsTitanMode(mode) )
+	{
+		thread SpawnPilotWithTitans( TEAM_IMC )
+	}
+
+	if ( !Flag( "Disable_MILITIA" ) && IsTitanMode(mode) ) 
+	{
+		thread SpawnPilotWithTitans( TEAM_MILITIA )
+	}
+
+	// WAVE SPAWNING (Spectre variants and cloak drones won't spawn in Titan-based modes)
+	if ( mode == ATTRITION || mode == CAPTURE_POINT || mode == TEAM_DEATHMATCH || mode == CAPTURE_THE_FLAG )
+	{
+		if ( !Flag( "Disable_IMC" ) )
+		{
+			thread SuicideSpectreWaveThink( TEAM_IMC )
+			thread CloakDroneWaveThink( TEAM_IMC )
+			thread SniperSpectreWaveThink( TEAM_IMC )
+			thread GhostPilotWaveThink( TEAM_IMC )
+			thread GunshipWaveThink( TEAM_IMC )
+			thread CombatDroneWaveThink( TEAM_IMC )
+		}
+		if ( !Flag( "Disable_MILITIA" ) )
+		{
+			thread SuicideSpectreWaveThink( TEAM_MILITIA )
+			thread CloakDroneWaveThink( TEAM_MILITIA )
+			thread SniperSpectreWaveThink( TEAM_MILITIA )
+			thread GhostPilotWaveThink( TEAM_MILITIA )
+			thread GunshipWaveThink( TEAM_MILITIA )
+			thread CombatDroneWaveThink( TEAM_MILITIA )
+		}
+	}
+    
+    while ( IsNPCSpawningEnabled() )
+    {
+        extraGrunts = GetGruntBonusForTeam( TEAM_IMC )
+
+        level.modifyAISlots[ TEAM_IMC ] = extraGrunts * -1
+        level.modifyAISlots[ TEAM_MILITIA ] = extraGrunts
+
+        if ( !Flag( "Disable_IMC" ) )
+            thread TeamDeathmatchSpawnNPCs( TEAM_IMC )
+
+        if ( !Flag( "Disable_MILITIA" ) )
+            thread TeamDeathmatchSpawnNPCs( TEAM_MILITIA )
+
+        wait level.npcRespawnWait
+    }
 }
 
 function GetGruntBonusForTeam( team )
@@ -687,7 +970,6 @@ function TeamDeathmatchSpawnNPCs( team )
 		// the function above will have used up some free slots, lets see how many remain
 		numFreeSlots = GetFreeAISlots( team )
 	}
-
 }
 
 function SpawnFrontlineSquad( team, numFreeSlots )
@@ -714,8 +996,6 @@ function SpawnFrontlineSquad( team, numFreeSlots )
 	{
 		spawnPointArray = SpawnPoints_GetDropPodStart( team )
 
-		//Assert( /*level.isTestmap ||*/ spawnPointArray.len(), "level didn't have any info_spawnpoint_droppod_start for team " + team )
-
 		if ( !spawnPointArray.len() )
 		{
 			spawnPointArray = SpawnPoints_GetDropPod()
@@ -730,22 +1010,20 @@ function SpawnFrontlineSquad( team, numFreeSlots )
 	//! 스폰포인트가 없으면 스킵
 	if(spawnPointArray.len() < 1)
 	{
-		//printl("_ai_game_modes.nut : 스폰 포인트가 없음")
 		return
 	}
-	// if something got this far and we don't have any spawnpoints then something is wrong.
 	Assert( spawnPointArray.len() )
 
 	local spawnPoint = GetFrontlineSpawnPoint( spawnPointArray, team, squadIndex, shouldSpawnSpectre, useStartSpawn )
 	Assert( spawnPoint )
 	++level.aiSpawnCounter[ team ]
 
+	/////////////////////////////
 	local npcArray
-
-	if ( shouldSpawnSpectre )
+    if ( shouldSpawnSpectre )
 	{
-		npcArray = Spawn_TrackedDropPodSpectreSquad( team, squadSize, spawnPoint, squadName )
-	}
+        npcArray = Spawn_TrackedDropPodSpectreSquad( team, squadSize, spawnPoint, squadName )
+    }
 	else
 	{
 		if ( Flag( "DisableDropships" ) || GameRules.GetGameMode() == EXFILTRATION )
@@ -763,8 +1041,280 @@ function SpawnFrontlineSquad( team, numFreeSlots )
 		}
 	}
 
-	// make the squad assault the correct frontline
-	SquadAssaultFrontline( npcArray, squadIndex )
+	// Route the squad based on gamemode. Frontline-based modes use the old path;
+	// CTF gets dynamic objective logic via SquadFlagRunThink.
+	if ( GameRules.GetGameMode() == CAPTURE_THE_FLAG )
+	{
+		if ( CTF_DEBUG )
+			printt( "[CTF_AI] SpawnFrontlineSquad dispatching squadIndex", squadIndex, "to AssaultCTF for team", team )
+		AssaultCTF( npcArray, squadIndex )
+	}
+	else if ( GameRules.GetGameMode() == CAPTURE_POINT )
+	{
+		thread SquadHardpointRunThink( npcArray, squadIndex )
+	}
+	else
+	{
+		// make the squad assault the correct frontline
+		SquadAssaultFrontline( npcArray, squadIndex )
+	}
+}
+
+
+function SuicideSpectreWaveThink( team )
+{
+	// Prevent Spectre variants from spawning in the Campaign
+	if ( GetCurrentPlaylistName() == "campaign_carousel" )
+		return
+
+    // Wait until the 3.5-minute mark before starting waves, can spawn as soon as 4.5 minutes
+    wait 210.0 + RandomFloat( 0.0, 45.0 )
+
+    while ( IsNPCSpawningEnabled() )
+    {
+        // Wait between 1 to 3.5 min between waves
+        wait RandomFloat( 60.0, 210.0 )
+
+        // Find valid spawn points for the wave
+        local spawnPoints = SpawnPoints_GetDropPod()
+        
+        // Define how many pods you want in the wave (e.g., 3 pods of 4 = 12 spectres)
+        local podsToSpawn = 3
+        local squadSize = 4
+        local squadName = MakeSquadName( team, GetIndexSmallestSquad( team ) )
+
+        for ( local i = 0; i < podsToSpawn; i++ )
+        {
+            if ( spawnPoints.len() > i )
+            {
+                local sp = spawnPoints[i]
+                
+                // Spawn the pod using force = true to bypass max AI limits
+                Spawn_TrackedDropPodSquad( "npc_spectre", team, squadSize, sp, squadName, true, SpawnSuicideSpectre )
+                
+                // Add a tiny stagger so the drop pods don't clip into each other
+                wait RandomFloat( 0.5, 1.5 ) 
+            }
+        }
+    }
+}
+
+function CloakDroneWaveThink( team )
+{
+	if ( !ShouldUseNPCPilots() )
+		return
+
+	// Prevent Cloak Drones from spawning in the Campaign
+	if ( GetCurrentPlaylistName() == "campaign_carousel" )
+		return
+
+    // Wait until the 3-minute mark before starting waves, can spawn as soon as 4 minutes
+    wait 180.0 + RandomFloat( 0.0, 45.0 )
+
+    while ( IsNPCSpawningEnabled() )
+    {
+        // Wait between 1 to 2.5 min between drone waves
+        wait RandomFloat( 60.0, 150.0 )
+
+		// 50% chance for drones spawn
+        if ( RandomFloat( 0.0, 1.0 ) > 0.50 )
+            continue
+
+        // Find valid spawn points for the wave using existing drop pod points
+        local spawnPoints = SpawnPoints_GetDropPodStart( team ) 
+		if ( spawnPoints.len() == 0 )
+			spawnPoints = SpawnPoints_GetDropPod()
+        
+        // Define how many drones you want per wave
+        local dronesToSpawn = RandomIntRange( 0, 2 )
+
+		for ( local i = 0; i < dronesToSpawn; i++ )
+		{
+			if ( spawnPoints.len() > 0 )
+			{
+				// Pick a random spawn point instead of using 'i'
+				local sp = spawnPoints[ RandomInt( spawnPoints.len() ) ]
+				SpawnCloakDrone( team, sp.GetOrigin(), sp.GetAngles() )
+				wait RandomFloat( 0.5, 1.5 ) 
+			}
+        }
+    }
+}
+
+function GunshipWaveThink( team )
+{
+	// Prevent Gunships from spawning in the early Campaign
+	if ( GetCurrentPlaylistName() == "campaign_carousel" )
+	{
+		if ( GetMapName() == "mp_fracture" || GetMapName() == "mp_colony" || GetMapName() == "mp_relic" )
+			return
+	}
+
+    // Wait until the 2-minute mark before starting waves, can spawn as soon as 3 minutes
+    wait 120.0 + RandomFloat( 0.0, 45.0 )
+
+    while ( IsNPCSpawningEnabled() )
+    {
+        // Wait between 1 to 2.5 min between ship waves
+        wait RandomFloat( 60.0, 150.0 )
+
+		// 45% chance for gunships spawn
+        if ( RandomFloat( 0.0, 1.0 ) > 0.45 )
+			continue
+
+        // Find valid spawn points for the wave using existing drop pod points
+        local spawnPoints = SpawnPoints_GetDropPodStart( team ) 
+		if ( spawnPoints.len() == 0 )
+			spawnPoints = SpawnPoints_GetDropPod()
+        
+        // Define how many ships you want per wave
+        local shipsToSpawn = RandomIntRange( 0, 2 )
+
+		for ( local i = 0; i < shipsToSpawn; i++ )
+		{
+			if ( spawnPoints.len() > 0 )
+			{
+				// Pick a random spawn point instead of using 'i'
+				local sp = spawnPoints[ RandomInt( spawnPoints.len() ) ]
+				SpawnAIGunship( team, sp.GetOrigin(), sp.GetAngles() )
+				wait RandomFloat( 0.5, 1.5 ) 
+			}
+        }
+    }
+}
+
+function CombatDroneWaveThink( team )
+{
+	// Drones will only spawn on modern day IMC bases in Campaign
+	// ...We can assume that Bish hacked some, which is why Militia drones spawn
+	if ( GetCurrentPlaylistName() == "campaign_carousel" )
+	{
+		switch ( GetMapName() )
+		{
+			case "mp_fracture":
+			case "mp_colony":
+			case "mp_relic":
+			case "mp_angel_city":
+			case "mp_boneyard":
+				return
+		}
+	}
+
+    // Wait until the 1-minute mark before starting waves, can spawn as soon as 2 minutes
+   wait 60.0 + RandomFloat( 0.0, 45.0 )
+
+    while ( IsNPCSpawningEnabled() )
+    {
+        // Wait between 1 to 2.5 min between drone waves
+        wait RandomFloat( 60.0, 150.0 )
+
+		// 65% chance for drones to spawn
+        if ( RandomFloat( 0.0, 1.0 ) > 0.65 )
+			continue
+
+        // Find valid spawn points for the wave using existing drop pod points
+        local spawnPoints = SpawnPoints_GetDropPodStart( team ) 
+		if ( spawnPoints.len() == 0 )
+			spawnPoints = SpawnPoints_GetDropPod()
+        
+        // Define how many drones you want per wave
+        local dronesToSpawn = RandomIntRange( 0, 3 )
+
+		for ( local i = 0; i < dronesToSpawn; i++ )
+		{
+			if ( spawnPoints.len() > 0 )
+			{
+				// Pick a random spawn point instead of using 'i'
+				local sp = spawnPoints[ RandomInt( spawnPoints.len() ) ]
+				SpawnAI_Combat_Drone( team, sp.GetOrigin(), sp.GetAngles() )
+				wait RandomFloat( 0.5, 1.5 ) 
+			}
+        }
+    }
+}
+
+function SniperSpectreWaveThink( team )
+{
+	// Prevent Spectre variants from spawning in the Campaign
+	if ( GetCurrentPlaylistName() == "campaign_carousel" )
+		return
+
+    // Wait until the 1-minute mark before starting waves, can spawn as soon as 2 minutes
+    wait 60.0 + RandomFloat( 0.0, 45.0 )
+
+    while ( IsNPCSpawningEnabled() )
+    {
+        // Wait a set interval before rolling for the next potential wave
+        wait RandomFloat( 60.0, 150.0 )
+
+        // 10% chance to spawn the sniper pods
+        if ( RandomFloat( 0.0, 1.0 ) > 0.10 )
+            continue
+
+        // Find valid spawn points for the wave
+        local spawnPoints = SpawnPoints_GetDropPod()
+        
+        // Define how many pods you want in the wave
+        local podsToSpawn = 2
+        local squadSize = 3
+      
+        local squadName = MakeSquadName( team, GetIndexSmallestSquad( team ) )
+
+        for ( local i = 0; i < podsToSpawn; i++ )
+        {
+            if ( spawnPoints.len() > i )
+            {
+                local sp = spawnPoints[i]
+                
+                // Spawn the pod using force = true to bypass max AI limits
+                Spawn_TrackedDropPodSquad( "npc_spectre", team, squadSize, sp, squadName, true, SpawnSniperSpectre )
+                
+                // Add a tiny stagger so the drop pods don't clip into each other
+                wait RandomFloat( 0.5, 1.5 ) 
+            }
+        }
+    }
+}
+
+function GhostPilotWaveThink( team )
+{
+	if ( !ShouldUseNPCPilots() )
+		return
+
+    // Wait until the 1-minute mark before starting waves, can spawn as soon as 2 minutes
+    wait 60.0 + RandomFloat( 0.0, 30.0 )
+
+    while ( IsNPCSpawningEnabled() )
+    {
+        // Wait a set interval before rolling for the next potential wave
+       wait RandomFloat( 60.0, 120.0 )
+
+        // 5% chance to spawn a ghost pod
+        if ( RandomFloat( 0.0, 1.0 ) > 0.05 )
+            continue
+
+        // Find valid spawn points for the wave
+        local spawnPoints = SpawnPoints_GetDropPod()
+        
+        // Define how many pods you want in the wave
+        local podsToSpawn = 1
+        local squadSize = 4
+      
+        local squadName = MakeSquadName( team, GetIndexSmallestSquad( team ) )
+
+        for ( local i = 0; i < podsToSpawn; i++ )
+        {
+            if ( spawnPoints.len() > i )
+            {
+				local sp = spawnPoints[i]
+
+                Spawn_TrackedDropPodSquad( "npc_soldier", team, squadSize, sp, squadName, true, SpawnGhostPilot )
+                
+                // Add a tiny stagger so the drop pods don't clip into each other
+                wait RandomFloat( 0.5, 1.5 )
+            }
+        }
+    }
 }
 
 
@@ -909,24 +1459,24 @@ function InitFrontLine()
 	file.nextOverrunCheck <- Time()
 	file.frontlineGroupTable <- {}
 	file.currentFrontline <- null
-	
-	file.frontlineTeamSide <- 
-	{ 
-		[TEAM_IMC] = 0, 
+
+	file.frontlineTeamSide <-
+	{
+		[TEAM_IMC] = 0,
 		[TEAM_MILITIA] = 1
 	}
 
-	file.npcDeathPerTeam <- 
+	file.npcDeathPerTeam <-
 	{
-		[TEAM_UNASSIGNED] = [], 
-		[TEAM_IMC] = [], 
+		[TEAM_UNASSIGNED] = [],
+		[TEAM_IMC] = [],
 		[TEAM_MILITIA] = []
 	}
 
-	file.playerDeathPerTeam <- 
+	file.playerDeathPerTeam <-
 	{
-	 	[TEAM_UNASSIGNED] = [], 
-	 	[TEAM_IMC] = [], 
+	 	[TEAM_UNASSIGNED] = [],
+	 	[TEAM_IMC] = [],
 	 	[TEAM_MILITIA] = []
 	 }
 
@@ -936,8 +1486,8 @@ function InitFrontLine()
 
 	AddDeathCallback( "npc_soldier", FrontlineDeathNPC )
 	AddDeathCallback( "npc_spectre", FrontlineDeathNPC )
-	AddDeathCallback( "player", FrontlineDeath )
-	AddDeathCallback( "npc_titan", FrontlineDeath )
+	//AddDeathCallback( "player", FrontlineDeath )
+	//AddDeathCallback( "npc_titan", FrontlineDeath )
 
 	// select current frontline group
 	// this will most likely be the one closest to the center of the map
@@ -1139,8 +1689,13 @@ function CheckFrontlineOverrun( losingTeam )
 			otherTeam = TEAM_IMC
 			break
 		}
+		default:
+		{
+			// FIX: Exit if the dying entity is neutral/unassigned
+			return 
+		}
 	}
-
+    
 	local teamScore = [ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ]
 	local frontline = file.currentFrontline
 	local center = frontline.frontlineCenter
@@ -1190,6 +1745,7 @@ function MoveFrontline( winningTeam )
 	if ( gamemode == CAPTURE_THE_FLAG || gamemode == CAPTURE_THE_FLAG_PRO )
 		return
 
+	local prevFrontline = file.currentFrontline
 	local prevFrontlineName = file.currentFrontline.name
 
 	// switch to different frontline
@@ -1200,7 +1756,14 @@ function MoveFrontline( winningTeam )
 	DebugSendClientFrontlineAllPlayers()
 
 	// determine what sides of the new fronline belong to what team
-	SetFrontlineSides( file.currentFrontline, winningTeam )
+	local newFrontline = file.currentFrontline
+	if (newFrontline != prevFrontline )
+	{
+		local towardOld = prevFrontline.frontlineCenter - newFrontline.frontlineCenter
+		local winnerSide = towardOld.Dot( newFrontline.combatDir ) < 0 ? 0 : 1 
+		file.frontlineTeamSide[ winningTeam ] = winnerSide
+		file.frontlineTeamSide[ GetOtherTeam(winningTeam)] = 1 - winnerSide
+	}
 
 	// reset the KPS stuff
 	ResetFrontlineKillsPerSecond()
@@ -1636,23 +2199,51 @@ function RateFrontLineNPCSpawnpoint( spawnpoint, team, edgeOrigin, combatDir )
 */
 }
 
-
 //////////////////////////////////////////////////////////
+const NPC_LOSS_MARGIN = 4 // the losing team must have lost this many npcs
 function FrontlineDeathNPC( ent, damageInfo )
 {
-	FrontlineDeath( ent, damageInfo )
+    local team = ent.GetTeam()
+
+    if ( team != TEAM_IMC && team != TEAM_MILITIA )
+        return
+    
+    //we dont count suicidespectres bc they die by design
+    if ( IsSuicideSpectre( ent ) ) 
+        return 
+
+    //weights gruntcaptains and pilots 3x normal
+    local weight = ( IsGruntCaptain(ent) || IsReskinnedPilot(ent) ) ? 3 : 1  
+    for( local i = 0; i < weight; i++ ) //appends timestamps for each unit death according to weight
+        file.npcDeathPerTeam[ team].append( Time() ) 
+    CheckFrontlineNPCLosses( team )
+}
+
+function CheckFrontlineNPCLosses( losingTeam )
+{	
+	//winner determined? 
+	if ( GetGameState() >= eGameState.WinnerDetermined )
+		return
+	
+	//frontline min_time not yet reached?
+	if ( Time() < file.nextOverrunCheck )
+		return 
+	
+	local winningTeam = GetOtherTeam( losingTeam ) //lmaooooo
+	local lost = GetFrontlineNPCKillsPerSec( losingTeam ) * KPS_TIMEFRAME //deaths over the past 20s
+	local won = GetFrontlineNPCKillsPerSec( winningTeam ) * KPS_TIMEFRAME //for the margin test
+
+	//if we've lost more than the NPS limit in the last 20 seconds and the margin is above or equal to 4, move the frontline
+	if ( lost >= NPC_KPS_LIMIT && lost - won >= NPC_LOSS_MARGIN )
+		MoveFrontline( winningTeam )
+
 }
 
 //////////////////////////////////////////////////////////
 function FrontlineDeath( ent, damageInfo )
 {
 	if ( ent.IsTitan() && !ent.GetTitanSoul().GetBossPlayer() )
-	{
-		if ( ent.s.fakePilotProp )
-			ent.s.fakePilotProp.Kill()
-
 		return	// don't care about npc_titans that wasn't controlled by a player
-	}
 
 	if ( ent.IsNPC() && !ent.IsTitan() )
 	{
@@ -1925,9 +2516,6 @@ function SquadAssault( squad, pos )
 			thread DrawAssaultGoal( squad[ i ], nodePos )
 	}
 }
-
-
-
 
 
 // debug functions
@@ -2276,14 +2864,23 @@ function MoveBot( team )
 }
 
 
-
-
 function EntitiesDidLoad()
 {
 	switch( GameRules.GetGameMode() )
 	{
 		case CAPTURE_POINT:
 			level.AssaultFunc = AssaultHP
+			break
+
+		case CAPTURE_THE_FLAG:
+			level.AssaultFunc = AssaultCTF
+			printt( "[CTF_AI] EntitiesDidLoad CTF branch: CTF_FAKECAP_ENABLED =", CTF_FAKECAP_ENABLED )
+			if ( CTF_FAKECAP_ENABLED )
+			{
+				printt( "[CTF_AI] EntitiesDidLoad: about to spawn fake-cap watchdog thread" )
+				thread CTFFakeCaptureWatchdog()
+				printt( "[CTF_AI] EntitiesDidLoad: thread call returned" )
+			}
 			break
 
 		default:
@@ -2296,7 +2893,7 @@ function EntitiesDidLoad()
 const SQUADSIZE = 4
 function ScriptedSquadAssault( squad, index )
 {
-	Assert( index >= 0 && index <= 2 )
+	Assert( index >= 0 && index < level.aiSquadCount )
 	Assert( squad.len() <= SQUADSIZE, "Squad " + index + " is too big: " + squad.len() )
 	level.AssaultFunc( squad, index )
 }
@@ -2327,8 +2924,10 @@ function AssaultHP( guys, index )
 	startOrigin = startOrigin * ( 1.0 / count.tofloat() )
 
 	local hardpoints 	= ArrayFarthest( GetHardpoints(), startOrigin )
-	local hpIndex 		= GetHardpointIndex( hardpoints[ index ] )
-	local squadName 	= MakeSquadName( team, hpIndex )
+	// with more squads than hardpoints, extra squads share a hardpoint but keep their own squad name
+	local hardpoint 	= hardpoints[ index % hardpoints.len() ]
+	local hpIndex 		= GetHardpointIndex( hardpoint )
+	local squadName 	= MakeSquadName( team, index < hardpoints.len() ? hpIndex : index )
 
 	foreach ( guy in guys )
 	{
@@ -2343,7 +2942,7 @@ function AssaultHP( guys, index )
 		return
 
 	//ok we got everyone - lets assault some shit
-	thread SquadCapturePointThink( squadName, hardpoints[ index ], team )
+	thread SquadCapturePointThink( squadName, hardpoint, team )
 }
 
 
@@ -2370,85 +2969,132 @@ function AssaultTDM( guys, index )
 	thread SquadAssaultFrontline( squad, index )
 }
 
-function TitanHasPilotInTitan( titan )
-{
-	if ( titan.IsPlayer() )
-		return
 
-	return titan.IsTitan() && titan.s.fakePilotModel != ""
-}
-Globalize( TitanHasPilotInTitan )
+// Puedes poner esto al final de tu archivo o dentro de una función de debug
 
-function GiveTitanPilotModel( titan, model )
+function DebugSpawnPilotInfantry( team )
 {
-    if ( !IsValid( titan ) )
+    local pilotmodels = file.pilotmodels
+    if ( team == TEAM_MILITIA )
+        pilotmodels = file.militiapilotmodels
+    else if ( team == TEAM_IMC )
+        pilotmodels = file.imcpilotmodels
+
+    // Usa el primer spawnpoint de droppod como referencia
+    local spawnPoints = SpawnPoints_GetDropPodStart( team )
+    if ( spawnPoints.len() == 0 )
+    {
+        printt("No spawnpoints found for team", team)
         return
+    }
+    local baseOrigin = spawnPoints[0].GetOrigin()
+    local baseAngles = spawnPoints[0].GetAngles()
 
-    // store model associated with this titan (the map/intro code reads this to show the cockpit pilot model)
-    titan.s.fakePilotModel = model
+    for (local i = 0; i < 4; i++)
+    {
+        local offset = Vector( i * 32, 0, 0 ) // separa un poco a cada piloto
+        local pilot = CreateEntity( "npc_soldier" )
+        DispatchSpawn( pilot )
+        pilot.SetOrigin( baseOrigin + offset )
+        pilot.SetAngles( baseAngles )
+        pilot.SetTeam( team )
+        pilot.SetModel( Random( pilotmodels ) )
+        SetNPCAsPilot( pilot, true )
+        GiveMinionWeapon( pilot, "mp_weapon_rspn101" )
+        pilot.SetMaxHealth( 200 )
+        pilot.SetHealth( 200 )
+        printt("Spawned pilot at", pilot.GetOrigin())
+    }
 }
-Globalize( GiveTitanPilotModel )
+Globalize( DebugSpawnPilotInfantry )
 
-// Create a prop copy for the pilot model and return it.
-function NPC_CreateCopyOfPilotModel( titan )
+
+////////////////////////////////////////////////////////////
+//////////////// HARDPOINT LOGIC FOR NPCS //////////////////
+/////// ( I DON'T EVEN KNOW IF THIS DOES ANYTHING ) ////////
+////////////////////////////////////////////////////////////
+
+function GetHardpointObjectiveForTeam( team, squadOrigin )
 {
-    if ( !IsValid( titan ) )
-        return null
+	local hardpoints = GetEntArrayByClass_Expensive( "info_hardpoint" )
 
-    local model = TEAM_IMC_CAPTAIN_MDL
-
-	// prefer explicit per-titan model if set
-	if ( titan.s.fakePilotModel != "" )
-		model = titan.s.fakePilotModel
-
-	// Create the prop. CreatePropDynamic in this build already returns a spawned entity,
-	local prop = CreatePropDynamic( model )
-	if ( !IsValid( prop ) )
+	if ( hardpoints.len() == 0 )
 		return null
 
-	// set team/owner so rendering/collision are correct and engine knows the relationship
-	prop.SetTeam( titan.GetTeam() )
-	prop.SetOwner( titan )
+	local players = GetPlayerArray()
+	if ( players.len() == 0 )
+		return null
 
-	// parent it to the titan cockpit attachment (use the hijack attachment)
-	prop.SetParent( titan, "HIJACK" )
-	prop.MarkAsNonMovingAttachment()
+	local playerTeam = players[0].GetTeam()
+	local isEnemyAI = ( team != playerTeam )
 
-	titan.s.fakePilotProp <- prop
-	return prop
+	local bestHP = null
+	local bestScore = 999999999.0
+
+	foreach ( hp in hardpoints )
+	{
+		local score = DistanceSqr( hp.GetOrigin(), squadOrigin )
+		local npcCount = GetHardpointNPCCount( hp, team )
+
+		// Same priorities for both teams. Lower score wins.
+		if ( hp.GetTeam() == team )
+			score += 10000000
+		else if ( hp.GetTeam() == TEAM_UNASSIGNED )
+			score -= 1000000
+		else
+			score -= 10000000
+
+		score += npcCount * 100000
+
+		if ( score < bestScore )
+		{
+			bestScore = score
+			bestHP = hp
+		}
+	}
+
+	return bestHP
 }
-Globalize( NPC_CreateCopyOfPilotModel )
 
-function SetupFakePilotValues( titan )
+
+function SquadHardpointRunThink( squad, squadIndex )
 {
-	titan.s.fakePilotModel <- ""
-	titan.s.fakePilotProp <- null
-
-	titan.s.npc_AllowTeamRodeo <- false
-}
-
-const NPC_TITAN_EXECUTIONS = 0
-function TryNPCTitanExecution( ent, damageInfo )
-{
-	if ( !NPC_TITAN_EXECUTIONS )
+	if ( !squad || squad.len() == 0 )
 		return
 
-	local attacker = damageInfo.GetAttacker()
-	if ( !ent.IsTitan() )
-	    return
+	ArrayRemoveInvalid( squad )
 
-	if ( damageInfo.GetDamageSourceIdentifier() != eDamageSourceId.titan_melee )
+	if ( squad.len() == 0 )
 		return
 
-	if ( !TitanHasPilotInTitan( attacker ) )
+	local team = squad[0].GetTeam()
+
+	local players = GetPlayerArray()
+	if ( players.len() == 0 )
 		return
 
-	if ( !ent.GetDoomedState() )
+	local playerTeam = players[0].GetTeam()
+
+	local squadOrigin = squad[0].GetOrigin()
+	local hp = GetHardpointObjectiveForTeam( team, squadOrigin )
+
+	if ( hp == null )
 		return
 
-	if ( !CodeCallback_IsValidMeleeExecutionTarget( attacker, ent ) )
+	local hpIndex = GetHardpointIndex( hp )
+	local squadName = GetHardpointSquadName( hp, team )
+
+	foreach ( guy in squad )
+	{
+		if ( IsValid( guy ) )
+			SetSquad( guy, squadName )
+	}
+
+	local hardpointSquad = GetNPCArrayBySquad( squadName )
+
+	if ( hardpointSquad.len() == 0 )
 		return
 
-    damageInfo.SetDamage( 0 )
-	thread PlayerTriesExecutionMelee( attacker, ent )
+	// Let the existing hardpoint state machine take over.
+	thread SquadCapturePointThink( squadName, hp, team )
 }

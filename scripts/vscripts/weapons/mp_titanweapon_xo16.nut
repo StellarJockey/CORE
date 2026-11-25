@@ -1,30 +1,33 @@
 AMMO_BODYGROUP_COUNT <- 0
 
-function OnWeaponActivate( activateParams )
+function OnWeaponActivate( weapon, player = null )
 {
-	AMMO_BODYGROUP_COUNT <- min( self.GetWeaponModSetting( "ammo_clip_size" ), 6 )
-	UpdateViewmodelAmmo()
+	AMMO_BODYGROUP_COUNT <- min( self.GetWeaponModSetting( "ammo_clip_size" ), 6 ) 
+	UpdateViewmodelAmmo() 
 
-	if ( IsServer() )
+	if (!( "burstFireCount" in self.s ) )
 	{
-		if ( !( "deactivationTime" in self.s ) )
+		if ( IsServer() || ( IsClient() && self.GetOwner() == GetLocalViewPlayer() ) )
 		{
-			self.s.deactivationTime <- 0
+			if ( self.HasMod( "burst" ) )
+			{
+				self.s.burstFireCount <- self.GetWeaponModSetting("burst_fire_count")
+			}
 		}
 	}
 
-	if ( !( "burstFireCount" in self.s ) )
+	if ( IsServer() ) 
 	{
-		if ( self.HasMod( "burst" ) )
-			self.s.burstFireCount <- self.GetWeaponModSetting( "burst_fire_count" )
-		else
-			self.s.burstFireCount <- 0
+		if ( !( "deactivationTime" in self.s ) ) 
+		{
+			self.s.deactivationTime <- 0 
+		}
 	}
 
-	if ( !self.HasMod( "accelerator" ) && !self.HasMod( "burst" ) )
+	if ( !self.HasMod( "accelerator" ) ) 
 	{
 		SetLoopingWeaponSound_1p3p( "Weapon.XO16_fire_first", "Weapon.XO16_fire_loop", "Weapon.XO16_fire_last",
-		                            "Weapon.XO16_fire_first_3P", "Weapon.XO16_fire_loop_3P", "Weapon.XO16_fire_last_3P" )
+		                            "Weapon.XO16_fire_first_3P", "Weapon.XO16_fire_loop_3P", "Weapon.XO16_fire_last_3P" ) 
 	}
 }
 
@@ -34,11 +37,6 @@ function OnWeaponDeactivate( deactivateParams )
 		self.s.deactivationTime = Time()
 
 	self.ClearLoopingWeaponSound()
-}
-
-function OnClientAnimEvent( name )
-{
-	GlobalClientEventHandler( name )
 }
 
 function OnWeaponPrimaryAttack( attackParams )
@@ -54,22 +52,19 @@ function OnWeaponPrimaryAttack( attackParams )
 
 function OnWeaponNpcPrimaryAttack( attackParams )
 {
-	Assert( IsServer() )
-
-	// EXTREMELY HACKY WAY TO GET NPC TITANS TO ACTUALLY USE THE BURST MOD
-	if ( self.HasMod( "burst" ) )
+	self.EmitWeaponNpcSound( LOUD_WEAPON_AI_SOUND_RADIUS, 0.2 )
+	
+	if ( self.HasMod( "burst" ) ) // EXTREMELY HACKY WAY TO GET NPC TITANS TO ACTUALLY USE THE BURST MOD
 	{
 		if ( "npcNextFireTime" in self.s && Time() < self.s.npcNextFireTime )
 			return
 
 		if ( !( "burstShotsRemaining" in self.s ) )
-			self.s.burstShotsRemaining <- self.s.burstFireCount
+			self.s.burstShotsRemaining <- 8
 
 		if ( !( "burstActive" in self.s ) )
 			self.s.burstActive <- false
 	}
-
-	self.EmitWeaponNpcSound( LOUD_WEAPON_AI_SOUND_RADIUS, 0.2 )
 
 	local damageType = damageTypes.LargeCaliber | DF_STOPS_TITAN_REGEN
 
@@ -86,7 +81,7 @@ function OnWeaponNpcPrimaryAttack( attackParams )
 		if ( self.s.burstShotsRemaining <= 0 )
 		{
 			self.s.burstActive = false
-			self.s.burstShotsRemaining = self.s.burstFireCount
+			self.s.burstShotsRemaining = 8
 			self.s.npcNextFireTime <- Time() + 0.6
 		}
 	}

@@ -1,11 +1,13 @@
 //=========================================================
-// MP ai soldier
+// MP ai soldier FO
 //
 //=========================================================
 
 PrecacheModel( IMC_SPECTRE_MODEL )
 PrecacheModel( MILITIA_SPECTRE_MODEL )
 PrecacheModel( NEUTRAL_SPECTRE_MODEL )
+PrecacheModel( SNIPER_SPECTRE_MODEL )
+PrecacheModel( SUICIDE_SPECTRE_MODEL )
 PrecacheSprite( "sprites/glow_05.vmt" )
 FlagInit( "disable_npcs" )
 FlagInit( "Disable_IMC" )
@@ -13,16 +15,25 @@ FlagInit( "Disable_MILITIA" )
 FlagInit( "Disable_SPECTRE" )
 FlagSet("Disable_SPECTRE")
 
+IncludeFile( "mp/_sniper_spectres" )
+IncludeFile( "mp/_suicide_spectres" )
+IncludeFile( "mp/_ai_npc_pilots" )
+
 const RPG_USE_RARE = 0
 const RPG_USE_SOMETIMES = 1
 const RPG_USE_ALWAYS = 2
 
 const STANDARDGOALRADIUS = 100
 
-const AI_SPECTRE_ACCURACY = 1.0
-const AI_SOLDIER_ACCURACY = 0.6
-const AI_SPECTRE_PROFICIENCY = 2
-const AI_SOLDIER_PROFICIENCY = 2
+const AI_SPECTRE_ACCURACY_DEFAULT = 1.0
+const AI_SOLDIER_ACCURACY_DEFAULT = 0.6 
+const AI_CAPTAIN_ACCURACY_DEFAULT = 1.0
+const AI_PILOT_ACCURACY_DEFAULT   = 2.0
+
+const AI_SPECTRE_PROFICIENCY_DEFAULT = 2
+const AI_SOLDIER_PROFICIENCY_DEFAULT = 2
+const AI_CAPTAIN_PROFICIENCY_DEFAULT = 2.5
+const AI_PILOT_PROFICIENCY_DEFAULT   = 2.5
 
 const CAPTAIN_NAME_FREQUENCY = 0.35
 
@@ -31,14 +42,22 @@ COOP_AT_WEAPON_RATES[ "mp_weapon_rocket_launcher" ] <- 0.5
 COOP_AT_WEAPON_RATES[ "mp_weapon_smr" ] <- 0.4
 COOP_AT_WEAPON_RATES[ "mp_weapon_mgl" ] <- 0.1
 
+PILOT_AT_WEAPON_RATES <- {}
+PILOT_AT_WEAPON_RATES[ "mp_weapon_rocket_launcher" ] <- 0.35
+PILOT_AT_WEAPON_RATES[ "mp_weapon_smr" ] <- 0.25
+PILOT_AT_WEAPON_RATES[ "mp_weapon_mgl" ] <- 0.2
+PILOT_AT_WEAPON_RATES[ "mp_weapon_defender" ] <- 0.2
+
 const SPECTRE_GRENADE_OUT = "diag_spectre_gs_GrenadeOut_01_1"
 
 function main()
 {
 	PrecacheModel( TEAM_IMC_GRUNT_MDL )
 	PrecacheModel( TEAM_IMC_ROCKET_GRUNT_MDL )
+	PrecacheModel( TEAM_IMC_CAPTAIN_MDL )
 	PrecacheModel( TEAM_MILITIA_GRUNT_MDL )
 	PrecacheModel( TEAM_MILITIA_ROCKET_GRUNT_MDL )
+	PrecacheModel( TEAM_MILITIA_CAPTAIN_MDL )
 
 	Globalize( GruntPod_Launch )
 	Globalize( GruntPod_LaunchHunters )
@@ -74,6 +93,7 @@ function main()
 	Globalize( EnemyChanged_Standard )
 	Globalize( EnemyChanged_Rocket )
 	Globalize( ResetNPCs )
+	Globalize( IsGruntCaptain )
 
 	Globalize( Spawn_GruntSquad )
 	Globalize( Spawn_SpectreSquad )
@@ -111,6 +131,12 @@ function main()
 	AddCallback_OnClientConnecting( AiSoldiers_InitPlayer )
 	AddDeathCallback( "npc_spectre", CommonDeath )
 	AddDeathCallback( "npc_soldier", CommonDeath )
+	if ( GameRules.GetGameMode() != COOPERATIVE )
+	{
+		AddSpawnCallback("npc_soldier", CoopTD_OnSoldierOrSpectreSpawn)
+		AddSpawnCallback("npc_spectre", CoopTD_OnSoldierOrSpectreSpawn)
+		AddSpawnCallback("npc_spectre", CoopTD_EnableSpectreRodeo)
+	}
 
 	Globalize( ClientCommand_SpawnViewGrunt )
 	Globalize( ClientCommand_SpawnViewCaptainGrunt )
@@ -146,10 +172,11 @@ function main()
 		AddClientCommandCallback( "spawnviewsniperspectre", ClientCommand_SpawnViewSniperSpectre )
 	}
 
-	InitCaptainNames()
+	// InitCaptainNames()
 
 	RegisterSignal("Stop_SimulateGrenadeThink")
 }
+
 
 function ClientCommand_SpawnViewGrunt( player, ... )
 {
@@ -470,14 +497,14 @@ function CreateGrunt( team, model, weapon, alert = true, captain = false )
 
 	npc_soldier = CreateEntity( "npc_soldier" )
 	npc_soldier.kv.spawnflags = 131072 | 512 | 4 // don't drop grenade, fall to ground, fade corpse
-	npc_soldier.kv.AccuracyMultiplier = AI_SOLDIER_ACCURACY
+	npc_soldier.kv.AccuracyMultiplier = AI_SOLDIER_ACCURACY_DEFAULT
 	npc_soldier.kv.alwaysalert = alertVal
 	npc_soldier.kv.reactChance = 20
 	npc_soldier.kv.reactFriendlyChance = 100
-	npc_soldier.kv.health = 120
-	npc_soldier.kv.max_health = 120
+	npc_soldier.kv.health = 160 // 120
+	npc_soldier.kv.max_health = 160 // 120
 	npc_soldier.kv.physdamagescale = 1.0
-	npc_soldier.kv.WeaponProficiency = AI_SOLDIER_PROFICIENCY
+	npc_soldier.kv.WeaponProficiency = AI_SOLDIER_PROFICIENCY_DEFAULT
 	npc_soldier.kv.NumGrenades = 0
 	npc_soldier.kv.teamnumber = team
 	npc_soldier.kv.additionalequipment = weapon
@@ -496,22 +523,39 @@ function CreateGrunt( team, model, weapon, alert = true, captain = false )
 
 function SetGruntTitleFromTeam( grunt, team, captain = false )
 {
+
+	local captainRanks = [ "Captain", "Captain", "Captain", "Captain",
+		"Lance Cpl.", "Cpl.", "Cpl.", "Sgt.", "Sgt.", 
+    	"Staff Sgt.", "Gunnery Sgt.", "2nd Lt.", "1st Lt.",
+	]
+	local rank = Random( captainRanks )
+	local captainName = ""
+	
 	if ( team == TEAM_IMC )
 	{
+		captainName = GetRandomCaptainName( team )
+		local title = rank + " " + captainName
 		if ( captain )
-			grunt.SetTitle( GetCaptainName() )
+		{
+			grunt.SetTitle( title )
+			grunt.SetName( title )
+		}
 		else
 			grunt.SetTitle( "#NPC_GRUNT_IMC" )
 	}
 	else
 	{
+		captainName = GetRandomCaptainName( team )
+		local title = rank + " " + captainName
 		if ( captain )
-			grunt.SetTitle( GetCaptainName() )
+		{
+			grunt.SetTitle( title )
+			grunt.SetName( title )
+		}
 		else
 			grunt.SetTitle( "#NPC_GRUNT_MILITIA" )
 	}
 }
-
 
 //////////////////////////////////////////////////////////
 // common init for grunts and spectres
@@ -566,7 +610,11 @@ function SpawnGrunt( team, squadName, origin, angles, alert = true, weapon = nul
 
 	soldier.SetDoFaceAnimations( team == TEAM_MILITIA )
 
-	soldier.SetAISettings( "fireteam_soldier" )	// do this after spawning
+	if ( "isCaptain" in soldier.s )
+		soldier.SetAISettings( "fireteam_captain" )
+	else
+		soldier.SetAISettings( "fireteam_soldier" )	// do this after spawning
+
 
 	SetupSoldierForRPGs( soldier, team )
 
@@ -710,13 +758,33 @@ function CreateMinionBubbleShield( guy )
 }
 Globalize( CreateMinionBubbleShield )
 
+function IsGruntCaptain( npc )
+{
+    return ("s" in npc && "isCaptain" in npc.s && npc.s.isCaptain)
+}
 
 function SpawnGruntCaptain( team, squadName, origin, angles, alert = true, weapon = null, hidden = false )
 {
-	local captain = true
-	return SpawnGrunt( team, squadName, origin, angles, alert, weapon, hidden, captain )
+    local captain = true
+    
+    local heavyWeapons = [ "mp_weapon_rspn101", "mp_weapon_lmg", "mp_weapon_hemlok", "mp_weapon_g2", ]
+    weapon = heavyWeapons[ RandomInt( heavyWeapons.len() ) ]
+
+    local guy = SpawnGrunt( team, squadName, origin, angles, alert, weapon, hidden, captain )
+
+    guy.kv.health = 250
+    guy.kv.max_health = 250
+    guy.kv.AccuracyMultiplier = AI_CAPTAIN_ACCURACY_DEFAULT
+    guy.kv.WeaponProficiency = AI_CAPTAIN_PROFICIENCY_DEFAULT
+
+	if ( "s" in guy && "isPilot" in guy.s )
+		guy.s.isPilot <- false
+		
+	guy.s.isCaptain <- true
+
+    return guy
 }
-Globalize( SpawnGruntCaptain )
+
 
 function SpawnGruntPropDynamic( team, squadName, origin, angles, alert = true, weapon = null, hidden = false )
 {
@@ -772,18 +840,26 @@ function GetGruntModel( team, captain = false )
 	}
 }
 
-function GetGruntWeapon( team )
+::GRUNT_WEAPON_POOL <- [
+	"mp_weapon_rspn101",
+    "mp_weapon_rspn101",
+    "mp_weapon_hemlok",
+    "mp_weapon_lmg",
+    "mp_weapon_shotgun",
+]
+
+::SPECTRE_WEAPON_POOL <- [
+	"mp_weapon_r97",
+	"mp_weapon_r97",
+	"mp_weapon_rspn101",
+	"mp_weapon_car",
+	"mp_weapon_hemlok",
+	"mp_weapon_volt",
+]
+
+function GetGruntWeapon( team ) 
 {
-	if ( team == TEAM_IMC )
-	{
-		//imc has r101
-		return "mp_weapon_rspn101"
-	}
-	else
-	{
-		//militia have hemloks --> do we need to change this comment? 'cause this isn't a hemlock
-		return "mp_weapon_rspn101"
-	}
+    return Random( ::GRUNT_WEAPON_POOL )
 }
 
 function GetWeaponModel( weapon )
@@ -874,12 +950,22 @@ function DisableRockets( soldier )
 //////////////////////////////////////////////////////////
 function UpdateAILethality( soldier, enemy )
 {
-	local accuracyMultiplier = soldier.IsSpectre() ? AI_SPECTRE_ACCURACY : AI_SOLDIER_ACCURACY
-	local weaponProficiency = soldier.IsSpectre() ? AI_SPECTRE_PROFICIENCY : AI_SOLDIER_PROFICIENCY
+	local accuracyMultiplier = AI_SOLDIER_ACCURACY_DEFAULT
+	local weaponProficiency = AI_SOLDIER_PROFICIENCY_DEFAULT
+	local accuracyMultiplierSpectre = AI_SPECTRE_ACCURACY_DEFAULT
+	local weaponProficiencySpectre = AI_SPECTRE_PROFICIENCY_DEFAULT
+	local accuracyMultiplierCaptain = AI_CAPTAIN_ACCURACY_DEFAULT
+	local weaponProficiencyCaptain = AI_CAPTAIN_PROFICIENCY_DEFAULT
+	local accuracyMultiplierPilot = AI_PILOT_ACCURACY_DEFAULT
+	local weaponProficiencyPilot = AI_PILOT_PROFICIENCY_DEFAULT
+
+	if ( "isHologram" in soldier.s )
+		return
+
 	local accuracyMultiplierSniper = 100
 	local weaponProficiencySniper = 2
 
-	if ( enemy && enemy.IsPlayer() && !enemy.IsTitan() )
+	if ( enemy && ( enemy.IsPlayer() && !enemy.IsTitan() ) || ( IsReskinnedPilot ( soldier ) || IsGhostPilot( soldier ) ) )
 	{
 		if ( Riff_AILethality() != eAILethality.Default )
 		{
@@ -887,47 +973,113 @@ function UpdateAILethality( soldier, enemy )
 			{
 				case eAILethality.TD_Low:
 					accuracyMultiplier = 0.75
-					weaponProficiency = 2
+					accuracyMultiplierSpectre = 0.75
+					accuracyMultiplierCaptain = 0.75
+					accuracyMultiplierPilot = 0.75
 					accuracyMultiplierSniper = 500
+
+					weaponProficiency = 2
+					weaponProficiencySpectre = 2
+					weaponProficiencyCaptain = 2
+					weaponProficiencyPilot = 2
 					weaponProficiencySniper = 4
 					break
+
 				case eAILethality.TD_Medium:
 					accuracyMultiplier = 1.0
-					weaponProficiency = 2
+					accuracyMultiplierSpectre = 1.0
+					accuracyMultiplierCaptain = 1.0
+					accuracyMultiplierPilot = 1.0
 					accuracyMultiplierSniper = 1000
+
+					weaponProficiency = 2
+					weaponProficiencySpectre = 2
+					weaponProficiencyCaptain = 2
+					weaponProficiencyPilot = 2
 					weaponProficiencySniper = 1000
 					break
+
 				case eAILethality.TD_High:
 				case eAILethality.High:
 					accuracyMultiplier = 1.0
-					weaponProficiency = 3
+					accuracyMultiplierSpectre = 1.0
+					accuracyMultiplierCaptain = 3.0
+					accuracyMultiplierPilot = 3.0
 					accuracyMultiplierSniper = 1000
+
+					weaponProficiency = 3
+					weaponProficiencySpectre = 3
+					weaponProficiencyCaptain = 3
+					weaponProficiencyPilot = 3
 					weaponProficiencySniper = 1000
 					break
+
 				case eAILethality.VeryHigh:
-					accuracyMultiplier = 4.0
-					weaponProficiency = 4
+					accuracyMultiplier = 3.5
+					accuracyMultiplierSpectre = 4.0
+					accuracyMultiplierCaptain = 3.75
+					accuracyMultiplierPilot = 4.0
 					accuracyMultiplierSniper = 1000
+
+					weaponProficiency = 4
+					weaponProficiencySpectre = 4
+					weaponProficiencyCaptain = 4
+					weaponProficiencyPilot = 4
 					weaponProficiencySniper = 1000
 					break
 			}
 		}
 	}
 
-	//especially accurate snipers for coop tower defense
-	local activeWeapon = soldier.GetActiveWeapon()
-	if ( activeWeapon == null )
-		return
+	local targetAccuracy
+	local targetProficiency
 
-	local activeWeaponClassname = activeWeapon.GetClassname()
-	if ( activeWeaponClassname == "mp_weapon_dmr" || activeWeaponClassname == "mp_weapon_defender" )
+	if ( soldier.IsSpectre() )
 	{
-		accuracyMultiplier = accuracyMultiplierSniper
-		weaponProficiency = weaponProficiencySniper
+		targetAccuracy = accuracyMultiplierSpectre
+		targetProficiency = weaponProficiencySpectre
+	}
+	else if ( IsGruntCaptain( soldier ) )
+	{
+		targetAccuracy = accuracyMultiplierCaptain
+		targetProficiency = weaponProficiencyCaptain
+	}
+	else if ( IsReskinnedPilot( soldier ) || IsGhostPilot( soldier ) )
+	{
+		targetAccuracy = accuracyMultiplierPilot
+		targetProficiency = weaponProficiencyPilot
+	}
+	else
+	{
+		targetAccuracy = accuracyMultiplier
+		targetProficiency = weaponProficiency
 	}
 
-	soldier.kv.AccuracyMultiplier = accuracyMultiplier
-	soldier.kv.WeaponProficiency = weaponProficiency
+	// Override with sniper settings if using snipers or smart pistol
+	local activeWeapon = soldier.GetActiveWeapon()
+	if ( activeWeapon != null )
+	{
+		local activeWeaponClassname = activeWeapon.GetClassname()
+		switch ( activeWeaponClassname )
+		{
+			case "mp_weapon_dmr":
+			case "mp_weapon_defender":
+			case "mp_weapon_sniper":
+			case "mp_weapon_sr_valkyrie":
+			case "mp_weapon_smart_pistol":
+				targetAccuracy = accuracyMultiplierSniper
+				targetProficiency = weaponProficiencySniper
+				break
+		}
+
+		if ( IsGhostPilot( soldier ) )
+		{
+			targetAccuracy = accuracyMultiplierSniper
+			targetProficiency = weaponProficiencySniper
+		}
+	}
+	soldier.kv.AccuracyMultiplier = targetAccuracy
+	soldier.kv.WeaponProficiency = targetProficiency
 }
 Globalize( UpdateAILethality )
 
@@ -939,7 +1091,10 @@ function EnemyChanged_Standard( soldier )
 
 function EnemyChanged_Rocket( soldier )
 {
-	if ( EnemyChangedSwitchWeapon( soldier ) )
+	if ( "isHologram" in soldier.s )
+    	return
+
+	if ( EnemyChangedSwitchWeapon( soldier ) && !( IsReskinnedPilot( soldier ) || IsGhostPilot( soldier ) ) )
 		UpdateAILethality( soldier, null ) // standard accuracy when using rockets
 	else
 		UpdateAILethality( soldier, soldier.GetEnemy() )
@@ -948,21 +1103,23 @@ function EnemyChanged_Rocket( soldier )
 //////////////////////////////////////////////////////////
 function EnemyChangedSwitchWeapon( soldier )
 {
+	if ( "isHologram" in soldier.s )
+    	return
+
 	local atWeapon
-	if ( GameRules.GetGameMode() == COOPERATIVE )
+	if ( "atWeapon" in soldier.s )
 	{
-		if ( "atWeapon" in soldier.s )
-		{
-			atWeapon = soldier.s.atWeapon
-		}
-		else
-		{
-			atWeapon = GetRandomKeyFromWeightedTable( COOP_AT_WEAPON_RATES, 1.0 )
-			soldier.s.atWeapon <- atWeapon
-		}
+		atWeapon = soldier.s.atWeapon
 	}
 	else
-		atWeapon = "mp_weapon_rocket_launcher"
+	{
+		if ( IsReskinnedPilot( soldier ) || IsGhostPilot( soldier ) )
+			atWeapon = GetRandomKeyFromWeightedTable( PILOT_AT_WEAPON_RATES, 1.0 )
+		else
+			atWeapon = GetRandomKeyFromWeightedTable( COOP_AT_WEAPON_RATES, 1.0 )
+		soldier.s.atWeapon <- atWeapon
+	}
+	
 	local startWeapon = soldier.kv.additionalequipment
 
 	local useATWeapon = false
@@ -1038,7 +1195,7 @@ function TrySpottedCallout( guy, enemy )
 			else
 				PlaySpectreChatterToAll( "spectre_gs_spotfartitan_1_1", guy )
 		}
-		else //Grunt callouts
+		else if ( !IsGhostPilot( guy ) ) // Grunt callouts
 		{
 			if ( Distance( guy.GetOrigin(), enemy.GetOrigin() ) < 1000 )
 				PlaySquadConversationToAll( "aichat_spot_titan_close", guy )
@@ -1058,7 +1215,7 @@ function TrySpottedCallout( guy, enemy )
 				PlaySpectreChatterToAll( "spectre_gs_spotenemypilot_01_1", guy )
 
 		}
-		else //Grunt callouts
+		else if ( !IsGhostPilot( guy ) ) // Grunt callouts, excludes ghost pilots only!
 		{
 			if ( Distance( guy.GetOrigin(), enemy.GetOrigin() ) < 1000 )
 			{
@@ -1147,15 +1304,33 @@ function NPCSpawnFuncWrapper( count, index, spawnFunc, team, squadName, origin, 
 Globalize( NPCSpawnFuncWrapper )
 
 
-function __SpawnFuncWrapper( count, index, spawnFunc, team, squadName, origin, angles )
+// Old NPC Pilots only spawn if there are 4 or less players/bots
+function ShouldUseNPCPilots()
+{
+	return GetPlayerArray().len() <= 4
+}
+Globalize( ShouldUseNPCPilots )
+
+// Added 'isArray = false' to the parameter list
+function __SpawnFuncWrapper( count, index, spawnFunc, team, squadName, origin, angles, isArray = false )
 {
 	Assert( type( spawnFunc ) == "function" )
 	local guy
 
-	if ( ShouldSpawnCaptain( count, index, spawnFunc ) )
+	// 15% Chance for an NPC Pilot inside Grunt Pods, but only when bots aren't present
+	if ( spawnFunc.getinfos().name == "SpawnGrunt" && ShouldUseNPCPilots() && RandomFloat( 0.0, 1.0 ) <= 0.15 )
+	{
+		guy = SpawnPilotInfantry( team, squadName, origin, angles )
+	}
+	// Existing Captain Logic
+	else if ( ShouldSpawnCaptain( count, index, spawnFunc, isArray ) && spawnFunc.getinfos().name == "SpawnGrunt" )
+	{
 		guy = SpawnGruntCaptain( team, squadName, origin, angles )
+	}
 	else
+	{
 		guy = spawnFunc( team, squadName, origin, angles )
+	}
 
 	return guy
 }
@@ -1166,14 +1341,17 @@ function __SpawnFuncArrayWrapper( count, index, spawnFuncArray, team, squadName,
 	Assert( index in spawnFuncArray )
 	local spawnFunc = spawnFuncArray[ index ]
 
-	return __SpawnFuncWrapper( count, index, spawnFunc, team, squadName, origin, angles )
+	return __SpawnFuncWrapper( count, index, spawnFunc, team, squadName, origin, angles, true )
 }
 
 
-function ShouldSpawnCaptain( count, index, spawnFunc )
+function ShouldSpawnCaptain( count, index, spawnFunc, isArray = false )
 {
-	if ( spawnFunc != SpawnGrunt )
-		return false
+	if ( spawnFunc == SpawnSpectre )
+        return false
+
+    if ( isArray )
+        return false
 
 	if ( count < 4 )
 		return false
@@ -1245,7 +1423,7 @@ function SpawnGrunts( dropPod, team, squadName, spawnFunc )
 
 	for ( local idx = 0; idx < numNPCs && idx < orgs.len(); idx++ )
 	{
-		local ent = spawnFunc( team, squadName, spawnOrigin, spawnAngles )
+		local ent = NPCSpawnFuncWrapper( numNPCs, idx, spawnFunc, team, squadName, spawnOrigin, spawnAngles )
 
 		if ( !ent )
 			continue
@@ -1292,37 +1470,27 @@ function GetPlayerSpectreSquadName( player )
 function SpawnSpectre( team, squadName, origin, angles, alert = true, weapon = null, hidden = false )
 {
 	team = GetProperTeamValue( team )
+    local model
+    local alertVal = alert ? 1 : 0
 
-	local model
-	local alertVal = alert ? 1 : 0
+	if ( weapon == null )
+        weapon = Random( ::SPECTRE_WEAPON_POOL )
 
-	if ( team == TEAM_IMC )
-	{
-		if ( weapon == null )
-			weapon = "mp_weapon_r97"
-		model = IMC_SPECTRE_MODEL
-	}
-	else if ( team == TEAM_MILITIA )
-	{
-		if ( weapon == null )
-			weapon = "mp_weapon_r97" //both teams have r97 for now
-		model = MILITIA_SPECTRE_MODEL
-	}
-	else	//Neutral team zero - "TEAM_UNASSIGNED"
-	{
-		if ( weapon == null )
-			weapon = "mp_weapon_r97" //both teams have r97 for now
-		model = NEUTRAL_SPECTRE_MODEL
-	}
+    if ( team == TEAM_IMC )
+        model = IMC_SPECTRE_MODEL
+    else if ( team == TEAM_MILITIA )
+        model = MILITIA_SPECTRE_MODEL
+    else
+        model = NEUTRAL_SPECTRE_MODEL
 
 	local spectre = CreateEntity( "npc_spectre" )
 	spectre.kv.spawnflags = 131072 | 512 | 4 // don't drop grenade, fall to ground, fade corpse
-	spectre.kv.AccuracyMultiplier = AI_SPECTRE_ACCURACY
+	spectre.kv.AccuracyMultiplier = AI_SPECTRE_ACCURACY_DEFAULT
 	spectre.kv.alwaysalert = alertVal
 	spectre.kv.reactChance = 0
 	spectre.kv.reactFriendlyChance = 0
 	spectre.kv.physdamagescale = 1.0
-	spectre.kv.WeaponProficiency = AI_SPECTRE_PROFICIENCY
+	spectre.kv.WeaponProficiency = AI_SPECTRE_PROFICIENCY_DEFAULT
 	spectre.kv.NumGrenades = 0
 	spectre.kv.teamnumber = team
 	spectre.kv.additionalequipment = weapon
@@ -1338,9 +1506,9 @@ function SpawnSpectre( team, squadName, origin, angles, alert = true, weapon = n
 	DispatchSpawn( spectre, true )
 	ApplyIronsights( spectre, weapon )
 
-	spectre.ConnectOutput( "OnGainEnemyLOS", OnSpectreSeeEnemy )
+    spectre.ConnectOutput( "OnGainEnemyLOS", OnSpectreSeeEnemy )
 
-	return spectre
+    return spectre
 }
 
 //////////////////////////////////////////////////////////
@@ -1397,6 +1565,8 @@ function disable_npcs()
 		if ( guy.GetClassname() == "npc_turret_sentry" )
 			continue
 		if ( guy.GetClassname() == "npc_titan" )
+			continue
+		if (guy.GetClassname() == "npc_dropship" && "dogfighter" in guy.s )
 			continue
 
 		guy.Kill()
@@ -1691,119 +1861,45 @@ function SendAIToAssaultPoint( guy, origin, angles, radius = STANDARDGOALRADIUS,
 }
 Globalize( SendAIToAssaultPoint )
 
-function GetCaptainName()
+function GetRandomCaptainName( team )
 {
-	level.captainNamesIndex++
-	if ( level.captainNamesIndex >= level.captainNames.len() )
-		level.captainNamesIndex = 0
-
-	return level.captainNames[ level.captainNamesIndex ]
-}
-
-function InitCaptainNames()
-{
-	level.captainNames <- [
-		"#NPC_CUSTOM_CAPTAIN_0",
-		"#NPC_CUSTOM_CAPTAIN_1",
-		"#NPC_CUSTOM_CAPTAIN_2",
-		"#NPC_CUSTOM_CAPTAIN_3",
-		"#NPC_CUSTOM_CAPTAIN_4",
-		"#NPC_CUSTOM_CAPTAIN_5",
-		"#NPC_CUSTOM_CAPTAIN_6",
-		"#NPC_CUSTOM_CAPTAIN_7",
-		"#NPC_CUSTOM_CAPTAIN_8",
-		"#NPC_CUSTOM_CAPTAIN_9",
-		"#NPC_CUSTOM_CAPTAIN_10",
-		"#NPC_CUSTOM_CAPTAIN_11",
-		"#NPC_CUSTOM_CAPTAIN_12",
-		"#NPC_CUSTOM_CAPTAIN_13",
-		"#NPC_CUSTOM_CAPTAIN_14",
-		"#NPC_CUSTOM_CAPTAIN_15",
-		"#NPC_CUSTOM_CAPTAIN_16",
-		"#NPC_CUSTOM_CAPTAIN_17",
-		"#NPC_CUSTOM_CAPTAIN_18",
-		"#NPC_CUSTOM_CAPTAIN_19",
-		"#NPC_CUSTOM_CAPTAIN_20",
-		"#NPC_CUSTOM_CAPTAIN_21",
-		"#NPC_CUSTOM_CAPTAIN_22",
-		"#NPC_CUSTOM_CAPTAIN_23",
-		"#NPC_CUSTOM_CAPTAIN_24",
-		"#NPC_CUSTOM_CAPTAIN_25",
-		"#NPC_CUSTOM_CAPTAIN_26",
-		"#NPC_CUSTOM_CAPTAIN_27",
-		"#NPC_CUSTOM_CAPTAIN_28",
-		"#NPC_CUSTOM_CAPTAIN_29",
-		"#NPC_CUSTOM_CAPTAIN_30",
-		"#NPC_CUSTOM_CAPTAIN_31",
-		"#NPC_CUSTOM_CAPTAIN_32",
-		"#NPC_CUSTOM_CAPTAIN_33",
-		"#NPC_CUSTOM_CAPTAIN_34",
-		"#NPC_CUSTOM_CAPTAIN_35",
-		"#NPC_CUSTOM_CAPTAIN_36",
-		"#NPC_CUSTOM_CAPTAIN_37",
-		"#NPC_CUSTOM_CAPTAIN_38",
-		"#NPC_CUSTOM_CAPTAIN_39",
-		"#NPC_CUSTOM_CAPTAIN_40",
-		"#NPC_CUSTOM_CAPTAIN_41",
-		"#NPC_CUSTOM_CAPTAIN_42",
-		"#NPC_CUSTOM_CAPTAIN_43",
-		"#NPC_CUSTOM_CAPTAIN_44",
-		"#NPC_CUSTOM_CAPTAIN_45",
-		"#NPC_CUSTOM_CAPTAIN_46",
-		"#NPC_CUSTOM_CAPTAIN_47",
-		"#NPC_CUSTOM_CAPTAIN_48",
-		"#NPC_CUSTOM_CAPTAIN_49",
-		"#NPC_CUSTOM_CAPTAIN_50",
-		"#NPC_CUSTOM_CAPTAIN_51",
-		"#NPC_CUSTOM_CAPTAIN_52",
-		"#NPC_CUSTOM_CAPTAIN_53",
-		"#NPC_CUSTOM_CAPTAIN_54",
-		"#NPC_CUSTOM_CAPTAIN_55",
-		"#NPC_CUSTOM_CAPTAIN_56",
-		"#NPC_CUSTOM_CAPTAIN_57",
-		"#NPC_CUSTOM_CAPTAIN_58",
-		"#NPC_CUSTOM_CAPTAIN_59",
-		"#NPC_CUSTOM_CAPTAIN_60",
-		"#NPC_CUSTOM_CAPTAIN_61",
-		"#NPC_CUSTOM_CAPTAIN_62",
-		"#NPC_CUSTOM_CAPTAIN_63",
-		"#NPC_CUSTOM_CAPTAIN_64",
-		"#NPC_CUSTOM_CAPTAIN_65",
-		"#NPC_CUSTOM_CAPTAIN_66",
-		"#NPC_CUSTOM_CAPTAIN_67",
-		"#NPC_CUSTOM_CAPTAIN_68",
-		"#NPC_CUSTOM_CAPTAIN_69",
-		"#NPC_CUSTOM_CAPTAIN_70",
-		"#NPC_CUSTOM_CAPTAIN_71",
-		"#NPC_CUSTOM_CAPTAIN_72",
-		"#NPC_CUSTOM_CAPTAIN_73",
-		"#NPC_CUSTOM_CAPTAIN_74",
-		"#NPC_CUSTOM_CAPTAIN_75",
-		"#NPC_CUSTOM_CAPTAIN_76",
-		"#NPC_CUSTOM_CAPTAIN_77",
-		"#NPC_CUSTOM_CAPTAIN_78",
-		"#NPC_CUSTOM_CAPTAIN_79",
-		"#NPC_CUSTOM_CAPTAIN_80",
-		"#NPC_CUSTOM_CAPTAIN_81",
-		"#NPC_CUSTOM_CAPTAIN_82",
-		"#NPC_CUSTOM_CAPTAIN_83",
-		"#NPC_CUSTOM_CAPTAIN_84",
-		"#NPC_CUSTOM_CAPTAIN_85",
-		"#NPC_CUSTOM_CAPTAIN_86",
-		"#NPC_CUSTOM_CAPTAIN_87",
-		"#NPC_CUSTOM_CAPTAIN_88",
-		"#NPC_CUSTOM_CAPTAIN_89",
-		"#NPC_CUSTOM_CAPTAIN_90",
-		"#NPC_CUSTOM_CAPTAIN_91",
-		"#NPC_CUSTOM_CAPTAIN_92",
-		"#NPC_CUSTOM_CAPTAIN_93",
-		"#NPC_CUSTOM_CAPTAIN_94",
-		"#NPC_CUSTOM_CAPTAIN_95"
+	local imcCaptainNames = [
+		"Heppe", "Roycewicz", "Dickinger", "Hackathorn", "Arnett", "Diamand", "Allen", "Snyder", "Sullivan", "Hatchett",
+		"McLeod", "Ferriz", "Ichige", "Barb", "Boyle", "Lor", "Chong", "Dionne", "Yuen", "Sun-Kwon", "Pulaski", "Cunningham", 
+		"Hughes", "Lambert", "Sosnowski", "Bartlett", "Burbridge", "McCoy", "Cangiano", "McCarthy", "Barcalay", "Sturges", 
+		"Hammon", "Deerson", "Mecklenburg", "Felton", "Lerma", "Smith", "Fiedler", "Ritchie", "Winslow", "Sizemore", "Mensa",
+		"Keefe", "Keating", "Virginia", "Carver", "Schanz", "Thurman", "McCann", "Adoti", "Calhoun", "Takenouchi", "Warren",
+		"Song", "Conger", "Emslie", "Gompert", "Persson", "Haggerty", "Faust", "Shiring", "Duvall", "Rahm", "Harding", "Sagan",
+		"Lipstock", "Wallcroft", "Byrne", "Nelson", "Lang", "Dietrich", "Mendoza", "Slater", "Bowden", "Voight", "Heath", 
+		"Flynn", "Fleming", "Fletcher", "Roman", "Keyes", "Almagro", "Rorke", "Roche", "Tariq", "Tyndall", "Bates", "Radcliffe",
+		"Reece", "Mace", "Arthur", "Simone", "Vance", "Erikson", "Magnusson", "Sykes", "Dane", "Price", "Sanderson", "Adler",
+		"Wolf", "Bannon", "Marshall", "Lukin", "Lukas", "Luke", "Gordon", "Desmond", "York", "Lancaster", "Midas", "Holt", 
+		"Wayland", "Pepper", "Copeland", "Foster", "Haile", "Ram", "Choi", "Imagawa", "Walther", "Weber", "Loiselle", "Fujiwara", 
+		"Halden", "Laswell", "Chernov", "Sato",
+	]
+	
+	local militiaCaptainNames = [
+		"Hendry", "Cotterell", "Ramirez", "Walden", "Stone", "McCandlish", "Capparelli", "Perez", "Bennett", "Palmer",
+		"Grigsby", "Biancalana", "Altamirano", "Kalas", "Miller", "Tullis", "Barfield", "Fresnel", "Rutledge", "Bryant", 
+		"Glenn", "LeBlanc", "Baker", "Shoberg", "Gaines", "Powers", "Abrahamsson", "Roebuck", "Bell", "Nakamura", "Payne",
+		"Papouban", "Ehrenberg", "Hakik", "Meas", "Redetzke", "Slayback", "DeRose", "Fukuda", "Rico", "Sommers", "Reynolds", 
+		"Wong", "Oliveira", "Sue", "Minx", "Bui", "Parsons", "Collins", "Reyes", "Delacourt", "Stroud", "Harris", "Garcia",
+		"Cho", "Kim", "Aki", "Medina", "Fujita", "Grimenstein", "Mitchell", "Cole", "Beck", "Carlyle", "Webber", "Webb",
+		"Burrell", "Braxton", "Landinger", "Ibrahim", "Cruz", "Daniels", "Nguyen", "Aramaki", "Pryce", "Roberts", "Rasmus",
+		"Foley", "Gomez", "Pondsmith", "Harper", "Mason", "Salazar", "Crosby", "Dowd", "Barry", "Wilson", "Zayd", "Garnett",
+		"Kaplan", "Weston", "Griggs", "Lopez", "West", "Vasquez", "Lozano", "Cook", "Pyle", "Ryan", "Drew", "Lee", "Freeman",
+		"Ortega", "Norris", "Lyons", "Reginald", "Shane", "Wyatt", "Gonzavi", "Hoyt", "Davis", "Cross", "Holden", "Rivera",
+		"Allen", "Gallagher", "Burns", "Westbrook", "Booth", "Grove", "Morgan", "Redd", "Manning", "Vincent", "Jules", "Torres",
+		"Mann", "Neil", "Otis", "Teller", "Jackie", "Bruce", "Banks", "Oswald", "Bowman", "Leo", "London", "Franklin", "Diaz",
 	]
 
-	ArrayRandomize( level.captainNames )
-	level.captainNamesIndex <- 0
+	if ( team == TEAM_IMC )
+		return Random( imcCaptainNames )
+	else
+		return Random( militiaCaptainNames )
 }
+Globalize( GetRandomCaptainName )
+
 
 function SetGlobalNPCHealth( healthValue ) //Debug, for trailer team
 {
@@ -1818,27 +1914,16 @@ function SetGlobalNPCHealth( healthValue ) //Debug, for trailer team
 
 function RandomizeMinionWeapon( npc )
 {
-	if ( IsSuicideSpectre( npc ) )
-			return
+    if ( IsSuicideSpectre( npc ) )
+        return
 
-	local gruntWeapons = [
-		"mp_weapon_rspn101",
-		"mp_weapon_rspn101",
-		"mp_weapon_hemlok",
-		"mp_weapon_lmg",
-		]
-	local spectreWeapons = [
-		"mp_weapon_car",
-		"mp_weapon_r97",
-		]
+    local weapon
+    if ( npc.IsSpectre() )
+        weapon = Random( ::SPECTRE_WEAPON_POOL )
+    else
+        weapon = GetGruntWeapon( npc.GetTeam() )
 
-	local weapon
-	if ( npc.IsSpectre() )
-		weapon = Random( spectreWeapons )
-	else
-		weapon = Random( gruntWeapons )
-
-	GiveMinionWeapon( npc, weapon )
+    GiveMinionWeapon( npc, weapon )
 }
 Globalize( RandomizeMinionWeapon )
 
@@ -1856,6 +1941,7 @@ function GiveMinionWeapon( npc, weapon )
 		case "mp_weapon_semipistol":
 		case "mp_weapon_smart_pistol":
 		case "mp_weapon_wingman":
+		case "mp_weapon_wingman_elite":
 			sightMod = ""
 			break
 
@@ -1884,6 +1970,7 @@ function ApplyIronsights( npc, weapon )
 		case "mp_weapon_semipistol":
 		case "mp_weapon_smart_pistol":
 		case "mp_weapon_wingman":
+		case "mp_weapon_wingman_elite":
 			return
 
 		case "mp_weapon_dmr":
@@ -1897,82 +1984,140 @@ function ApplyIronsights( npc, weapon )
 	npc.TakeActiveWeapon()
 	npc.GiveWeapon( weapon, [ sightMod ] )	
 }
+Globalize( ApplyIronsights )
 
-// Somewhat hacky way to get AI to throw grenades. Good enough for now.
+
+//npc grenade settings
+const NPC_GRENADE_TARGET_LOCK = 8.0
+const NPC_GRENADE_SQUAD_COOLDOWN = 12.0
+const NPC_GRENADE_MIN_DIST = 300
+const NPC_GRENADE_MAX_DIST = 1800
+
+//determines if a target is valid for a grenade throw: living guys, spectres, players, turrets, megaturret, checks the entity classname directly 
+function NPCGrenade_IsValidTarget( target, targetGrunts) 
+{
+	if (!IsAlive( target))
+		return false
+	if ( target.IsPlayer())
+		return true
+	local cls = target.GetClassname()
+	if ( cls == "npc_turret_sentry"  || cls == "npc_turret_mega")
+		return true
+	if ( targetGrunts && (cls == "npc_soldier" || cls == "npc_spectre") )
+		return true
+	return false  //Claire: no else required, returns false anyway
+}
+function NPCGrenade_CanThrow( npc, target ) // checks if we can even throw to avoid excess work
+{ 
+	local now = Time()
+	if ( "grenadeLockedUntil" in target.s && target.s.grenadeLockedUntil > now ) 
+		return false
+	
+	local squad = npc.Get( "squadname" )
+	if (squad != "" && "npcGrenadeSquadTime" in level && squad in level.npcGrenadeSquadTime )
+	{
+		if( level.npcGrenadeSquadTime[ squad] > now)
+			return false
+	}
+return true
+
+}
+function NPCGrenade_Claim( npc, target ) //claims a target that we want to throw a grenade at, nobody else in our squad will throw
+{
+	local now = Time()
+	target.s.grenadeLockedUntil <- now + NPC_GRENADE_TARGET_LOCK
+
+	local squad = npc.Get( "squadname" )
+	if ( squad == "" )
+		return
+	
+	if ( !( "npcGrenadeSquadTime" in level ) )
+		level.npcGrenadeSquadTime <- {} 
+	level.npcGrenadeSquadTime[ squad ] <- now + NPC_GRENADE_SQUAD_COOLDOWN
+}
+
+// Somewhat hacky way to get AI to throw grenades. Good enough for now. <==== (Thank you respawn very cool!!!! -claire)
 function SimulateGrenadeThrowing( npc, onlyRooftopCombat = true, targetGrunts = false )
 {
 	thread SimulateGrenadeThink( npc, onlyRooftopCombat, targetGrunts )
 }
 Globalize( SimulateGrenadeThrowing )
 
-function SimulateGrenadeThink(npc, onlyRooftopCombat, targetGrunts) {
+function SimulateGrenadeThink(npc, onlyRooftopCombat, targetGrunts)
+{
+	if ( "isHologram" in npc.s )
+		return
+
 	npc.EndSignal("OnDestroy")
 	npc.EndSignal("OnDeath")
 	npc.EndSignal("Stop_SimulateGrenadeThink")
 
+	AddAnimEvent(npc, "grenade_throw", NPCGrenadeThrow)
+
 	OnThreadEnd(
 		function(): (npc) {
-			if (IsAlive(npc))
+			if (IsAlive(npc) && "serverAnimEvents" in npc.s && "grenade_throw" in npc.s.serverAnimEvents)
 				DeleteAnimEvent(npc, "grenade_throw", NPCGrenadeThrow)
 		}
 	)
 
-	AddAnimEvent(npc, "grenade_throw", NPCGrenadeThrow)
+	local grenades = Random( [ "mp_weapon_frag_grenade", "mp_weapon_frag_grenade", "mp_weapon_frag_grenade", 
+							   "mp_weapon_grenade_emp", "mp_weapon_grenade_emp", 
+							   "mp_weapon_smoke_grenade" ] )
+							   
+	if ( !npc.GetOffhandWeapon( 0 ) ) 
+		npc.GiveOffhandWeapon( grenades, 0)
 
-	if (RandomInt(100) < 50)
-		npc.GiveOffhandWeapon("mp_weapon_frag_grenade", 0)
-	else
-		npc.GiveOffhandWeapon("mp_weapon_grenade_emp", 0)
+	local minDistSqr = NPC_GRENADE_MIN_DIST * NPC_GRENADE_MIN_DIST
+	local maxDistSqr = NPC_GRENADE_MAX_DIST * NPC_GRENADE_MAX_DIST //squares your min/max values for proper ranging
 
-	local npcRadius = 2000
-	local npcRadiusSqr = npcRadius * npcRadius
+	wait RandomFloat( 0.0, 15.0 ) 
 
 	for (;;) {
 		wait RandomFloat(4.5, 5.5)
 
+		local target = npc.GetEnemy()
+
+		if ( !NPCGrenade_IsValidTarget( target, targetGrunts) )
+			continue
+
 		local npcPos = npc.GetWorldSpaceCenter()
-		local enemyTeam = GetOtherTeam( npc.GetTeam() )
-		local grenadeTargets = GetPlayerArray()
-		grenadeTargets.extend(GetNPCArrayEx("npc_turret_sentry", enemyTeam, npcPos, npcRadius))
+		local targetPosition = target.IsPlayer() ? target.EyePosition() : target.GetWorldSpaceCenter( ) 
 
-		if (targetGrunts) {
-			grenadeTargets.extend(GetNPCArrayEx("npc_soldier", enemyTeam, npcPos, npcRadius))
-			grenadeTargets.extend(GetNPCArrayEx("npc_spectre", enemyTeam, npcPos, npcRadius))
-		}
+		local distSqr = DistanceSqr( targetPosition, npcPos )
+		if( distSqr > maxDistSqr || distSqr < minDistSqr) 
+			continue 
 
-		foreach(target in grenadeTargets) {
-			if (!IsAlive(target))
-				continue
+		//Intent is to use this as a rooftop deterent, not normal combat.
+		if (onlyRooftopCombat && targetPosition.z - npcPos.z < 75)
+			continue
 
-			local targetPosition
-			if (target.IsPlayer())
-				targetPosition = target.EyePosition()
-			else
-				targetPosition = target.GetWorldSpaceCenter()
+		if ( !npc.IsInterruptable() || !NPCGrenade_CanThrow( npc, target))
+			continue
 
-			if (DistanceSqr(targetPosition, npcPos) > npcRadiusSqr)
-				continue
-			//Intent is to use this as a rooftop deterent, not normal combat.
-			if (onlyRooftopCombat && targetPosition.z - npcPos.z < 75)
-				continue
-
-			if (npc.IsInterruptable() == false)
-				continue
-
-			if (npc.CanSee(target) && npc.GetEnemy() == target) {
-				npc.Anim_ScriptedAllowPain(true)
-				npc.Anim_ScriptedPlay("coop_grenade_throw")
-				npc.WaittillAnimDone()
-				npc.Anim_ScriptedAllowPain(false)
-				npc.AssaultPointEnt(npc.s.assaultPoint)
-				npc.Signal("Stop_SimulateGrenadeThink")
-			}
-			wait 0
-		}
+		if (!npc.CanSee( target ) )
+			continue 
+		
+		//if (npc.CanSee( target ) ) 
+			//continue
+			//Claire commented out: this results in NPCs throwing at in-range-but-not-visible enemies. leaving to retool for blind-throwing behavior later
+			//i hate the players and want them to die
+	
+		
+		NPCGrenade_Claim( npc, target ) 
+		npc.Anim_ScriptedAllowPain(true)
+		npc.Anim_ScriptedPlay("coop_grenade_throw")
+		npc.WaittillAnimDone()
+		npc.Anim_ScriptedAllowPain(false)
+		npc.AssaultPointEnt(npc.s.assaultPoint)
+			
+		wait RandomFloat( 20.0, 50.0) //wait a random amount of time, then keep looking
 	}
 }
 
-function NPCGrenadeThrow(npc) {
+
+function NPCGrenadeThrow( npc )
+{
 	Assert(IsValid(npc))
 
 	local id = npc.LookupAttachment("R_HAND")
@@ -1981,7 +2126,7 @@ function NPCGrenadeThrow(npc) {
 
 	local enemy = npc.GetEnemy()
 
-	if (!IsValid(weapon) || !IsValid(enemy))
+	if ( !IsValid(weapon) || !IsValid( enemy ) )
 		return
 
 	local throwPosition
@@ -1993,27 +2138,17 @@ function NPCGrenadeThrow(npc) {
 	throwPosition += Vector(RandomFloat(-64, 64), RandomFloat(-64, 64), RandomFloat(-32, 32))
 
 	local vel = GetVelocityForDestOverTime(npcPos, throwPosition, 2.0)
-
-	// Doesnt work properly anymore, disabling
-/*
-	if (weapon.GetClassname() == "mp_weapon_grenade_emp") {
-		// magic multipliers to get the EMP grenade to travel the same distance as the frag.
-		vel.x *= 2.0
-		vel.y *= 2.0
-		vel.z *= 1.25
-	}
-*/
 	local frag = weapon.FireWeaponGrenade(npcPos, vel, Vector(0, 0, 0), 3.0, damageTypes.GibBullet | DF_IMPACT | DF_EXPLOSION | DF_SPECTRE_GIB, DF_EXPLOSION | DF_RAGDOLL | DF_SPECTRE_GIB, PROJECTILE_NOT_PREDICTED, false, false)
 
 	frag.SetOwner(npc)
 	Grenade_Init(frag, weapon)
 	thread TrapExplodeOnDamage(frag, 20, 0.0, 0.0)
 
-	if (npc.IsSpectre())
-		EmitSoundOnEntity(npc, SPECTRE_GRENADE_OUT)
-	else
+	if ( npc.IsSpectre() )
+		EmitSoundOnEntity( npc, SPECTRE_GRENADE_OUT )
+	else  // Grunt callouts, INCLUDES GHOST PILOTS AND NPC PILOTS
 		PlaySquadConversationToAll( "aichat_grenade_incoming", npc )
-		//EmitSoundOnEntity(npc, GRUNT_GRENADE_OUT)
+		// EmitSoundOnEntity( npc, GRUNT_GRENADE_OUT )
 }
 
 //HACK! -> DO NOT SHIP - this should be in code
@@ -2023,7 +2158,8 @@ function SimulateSpectreRodeo( spectre )
 }
 Globalize( SimulateSpectreRodeo )
 
-function SimulateSpectreRodeoThink(spectre) {
+function SimulateSpectreRodeoThink(spectre)
+{
 	spectre.EndSignal("OnDestroy")
 	spectre.EndSignal("OnDeath")
 	spectre.EndSignal("OnLeeched")
@@ -2051,9 +2187,36 @@ function SimulateSpectreRodeoThink(spectre) {
 		Assert(IsAlive(titan))
 
 		if (!CanSpectreRodeo(spectre, titan))
-			continue
+            continue
 
-		thread SpectreRodeo(spectre, titan)
+        // --- RODEO WEAPON CHECK ---
+        local currentWeapon = spectre.GetActiveWeapon()
+        local primaryWeapon = spectre.kv.additionalequipment 
+
+        // If they have a weapon out and it's not their primary, swap it
+        if ( currentWeapon && currentWeapon.GetClassname() != primaryWeapon )
+        {
+            spectre.TakeActiveWeapon()
+            spectre.GiveWeapon( primaryWeapon )
+        }
+
+        thread SpectreRodeo(spectre, titan)
 		return
+	}
+}
+
+function CoopTD_OnSoldierOrSpectreSpawn(npc)
+{
+	if (RandomInt(100) < 20)
+		SimulateGrenadeThrowing( npc, false, true )
+}
+
+function CoopTD_EnableSpectreRodeo(spectre)
+{
+	local mode = GameRules.GetGameMode()
+	
+	if ( mode != TITAN_BRAWL )
+	{
+		SimulateSpectreRodeo(spectre)
 	}
 }

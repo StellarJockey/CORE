@@ -58,10 +58,10 @@ WeaponData
 	"damage_additional_bullets_titanarmor"			"1500"		// damage_xxx_value_titanarmor에 차지 레벨 증가에 따라서 + 되는 수치
 
 	// Damage - When Used by NPCs
-	"npc_damage_near_distance"						"800"
-	"npc_damage_far_distance" 						"1200"
-	"npc_damage_near_value"   						"250"
-	"npc_damage_far_value"							"250"
+	"npc_damage_near_distance"						"1500" // "800"
+	"npc_damage_far_distance" 						"3000" // "1200"
+	"npc_damage_near_value"   						"200" // "250"
+	"npc_damage_far_value"							"200" // "250"
 	"impulse_force"   								"10000"
 
 	// Ammo
@@ -203,6 +203,7 @@ WeaponData
 	"npc_max_burst"   								"1"
 	"rest_time_between_bursts_min"					"0.2"
 	"rest_time_between_bursts_max"					"0.3"
+	"npc_vortex_block"								"1"
 
 	// Icon
 	"hud_icon"										"HUD/dpad_call_in_charge_cannon"
@@ -246,10 +247,11 @@ WeaponData
 
 		burn_mod_charge_cannon
 		{
+			"bodygroup2_set"								"1"	
 			"bodygroup2_set"								"1"
 			"charge_time" 									"*0.5"
 			"crosshair_index"								"1"
-			"is_burn_mod"		"1"
+			"is_burn_mod"									"1"
 		}
 	}
 

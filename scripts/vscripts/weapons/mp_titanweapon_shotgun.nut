@@ -1,6 +1,5 @@
 const PELLETS_PER_BARREL = 11  // number of fake antilag bullets to fire per blast (for the look)
 const PELLETS_PER_ADDITIONAL_BARREL = 3
-
 const PLASMA_RIFLE_SPEED = 2500
 const PLASMA_RIFLE_SPREAD = 2.0  // full cone width in degrees: every shot lands within half of this of the aim
 
@@ -58,6 +57,7 @@ function OnWeaponPrimaryAttack( attackParams )
 
 	return 1
 }
+
 
 // The electricity on the shot is a short lived effect, so it is put back on the bolt while the bolt is still flying.
 // Without this the trail fades out part way through the flight and the shot arrives looking like nothing happened.
@@ -126,8 +126,6 @@ function OnClientAnimEvent( name )
 		else
 			self.PlayWeaponEffect( "wpn_shelleject_titan_shot_fp", "wpn_shelleject_pistol", "shell" )
 	}
-
-	GlobalClientEventHandler( name )
 }
 
 function OnWeaponStartZoomIn()

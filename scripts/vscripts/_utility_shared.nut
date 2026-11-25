@@ -1,4 +1,4 @@
-
+// FO
 
 function GetCurrentPlaylistVarFloat( val, useVal )
 {
@@ -452,6 +452,9 @@ function ShouldDoReplay( player, attacker, replayTime )
 
 	if ( attacker == player )
 		return false
+	
+	if ( GetCurrentPlaylistName() == "campaign_carousel" ) // kill replay cuts off the story dialogue
+		return false
 
 	// Check for connectTime property existence (for replay buffer check)
 	if ( !( "connectTime" in player ) || !( "connectTime" in attacker ) )
@@ -833,13 +836,13 @@ function GetEntityOwningPlayer( entity )
 		local owner = current.GetOwner()
 		if ( !IsValid( owner ) || owner == current )
 			break
+
 		current = owner
 	}
 
 	return null
 }
 Globalize( GetEntityOwningPlayer )
-
 
 function GetOtherTeam( guy )
 {
@@ -2054,22 +2057,35 @@ function ShouldRunEvac()
 		if ( GameRules.GetGameMode() == COOPERATIVE )
 			return true
 
-		//Return false if there are no players connected on either team
-		local losingTeam = GetOtherTeam( winningTeam )
+        local losingTeam = GetOtherTeam( winningTeam )
+        local playlist = GetCurrentPlaylistName()
 
-		if ( GetPlayerArrayOfTeam( winningTeam ).len() == 0 )
-			return false
+        // Check if WINNING team is empty (happens when you lose solo)
+        if ( GetPlayerArrayOfTeam( winningTeam ).len() == 0 )
+        {
+            // Proceed if we are in Campaign OR Attrition OR Hardpoint
+            if ( playlist != "campaign_carousel" && playlist != "at" && playlist != "cp" && playlist != "ctf" )
+                return false
+        }
 
-		if ( GetPlayerArrayOfTeam( losingTeam ).len() == 0 )
-			return false
+        // Check if LOSING team is empty (happens when you win solo)
+        if ( GetPlayerArrayOfTeam( losingTeam ).len() == 0 )
+        {
+            // ONLY proceed if we are in Campaign (to see the cutscenes)
+            if ( playlist != "campaign_carousel" )
+                return false
+        }
 
-		if ( IsPilotEliminationBased() && IsTeamEliminated( losingTeam ) && GameTeams.GetNumLivingPlayers( losingTeam ) == 0 )
-			return false
-	}
+        if ( IsPilotEliminationBased() && IsTeamEliminated( losingTeam ) && GameTeams.GetNumLivingPlayers( losingTeam ) == 0 )
+        {
+            if ( playlist != "campaign_carousel" )
+                return false
+        }
+    }
 
 	return true
 }
-
+	
 
 function HackGetDeltaToRef( origin, angles, ent, anim )
 {
@@ -2462,7 +2478,7 @@ function ScoreboardCompareFuncForGamemode( gamemode )
 		case HEIST:
 		default:
 			if ( IsFFABased() )
-				return CompareFFA
+				return CompareAssaultScore
 
 			return CompareScore
 	}
@@ -2800,16 +2816,24 @@ function ShouldEnterSuddenDeath( winningTeam )
 
 const ATTRITION_SCORE_TITAN   = 5
 const ATTRITION_SCORE_PILOT   = 4
+const ATTRITION_SCORE_GUNSHIP = 3
 const ATTRITION_SCORE_GRUNT   = 1
 const ATTRITION_SCORE_SPECTRE = 1
+const ATTRITION_SCORE_DRONE   = 1
 const ATTRITION_SCORE_MARVIN  = 0
 
 function AttritionScoreValueForVictim( victim )
 {
 	if ( victim.IsPlayer() )
 		return ATTRITION_SCORE_PILOT
+	else if ( "combatDrone" in victim.s )
+		return ATTRITION_SCORE_DRONE
+	else if ( victim.IsNPC() && ( "isPilot" in victim.s || "isPilotProp" in victim.s || "isGhostPilot" in victim.s ) )
+		return ATTRITION_SCORE_PILOT
 	else if ( victim.IsTitan() && !victim.IsPlayer() )
 		return ATTRITION_SCORE_TITAN
+	else if ( victim.IsNPC() && victim.IsDropship() && ( "dogfighter" in victim.s ) )
+		return ATTRITION_SCORE_GUNSHIP
 	else if ( victim.IsNPC() && victim.IsSpectre() )
 		return ATTRITION_SCORE_SPECTRE
 	else if ( victim.IsNPC() && victim.IsMarvin() )
@@ -3651,27 +3675,23 @@ function IsShoulderTurret( ent )
 	return ent.GetName().find( "turret_shoulder" ) != null
 }
 
-function ShouldPreventFriendlyFire( entityA, entityB )
+function ShouldPreventFriendlyFire( victim, attacker )
 {
-	if ( !IsValid( entityA ) || !IsValid( entityB ) )
-		return false
+	local victimTeam = victim.GetTeam()
+	local attackerTeam = attacker.GetTeam()
 
-	if ( entityA == entityB )
-		return true
-
-	local ownerA = GetEntityOwningPlayer( entityA )
-	local ownerB = GetEntityOwningPlayer( entityB )
-
-	if ( IsValid( ownerA ) && IsValid( ownerB ) )
+	if ( victimTeam == attackerTeam )
 	{
-		if ( ownerA == ownerB )
+		if ( victim == attacker )
 			return true
 
 		if ( IsFFABased() )
 			return false
+		
+		return true
 	}
 
-	return entityA.GetTeam() == entityB.GetTeam()
+	return false
 }
 
 function IsUplinkMode()
@@ -3712,45 +3732,4 @@ function GetWinningPlayer()
 		return null
 
 	return players[0]
-}
-
-function GetLeadingOpponent( player )
-{
-	local players = GetSortedPlayers( GetScoreboardCompareFunc(), null )
-	if ( players.len() == 0 )
-		return null
-
-	local leadingOpponent = null
-	foreach ( candidate in players )
-	{
-		if ( candidate == player )
-			continue
-
-		leadingOpponent = candidate
-		break
-	}
-
-	return leadingOpponent
-}
-
-// Sorts by kills and resolves ties in this order: fewest deaths
-function CompareFFA( a, b )
-{
-	local aKills = a.GetAssaultScore()
-	local bKills = b.GetAssaultScore()
-
-	if ( aKills < bKills )
-		return 1
-	else if ( aKills > bKills )
-		return -1
-
-	local aDeaths = a.GetDeathCount()
-	local bDeaths = b.GetDeathCount()
-
-	if ( aDeaths > bDeaths )
-		return 1
-	else if ( aDeaths < bDeaths )
-		return -1
-
-	return 0
 }

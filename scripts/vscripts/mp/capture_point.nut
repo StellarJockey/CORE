@@ -1,5 +1,5 @@
 //********************************************************************************************
-//	capture_point
+//	capture_point FO
 //********************************************************************************************
 Assert( IsServer() )
 
@@ -30,6 +30,7 @@ function main()
 
 function EntitiesDidLoad()
 {
+	thread SetupTeamDeathmatchNPCs()
 	// don't do the rest if we couldn't init (testmaps)
 	level.hardpointModeInitialized = InitializeHardpointsForCapturePoint()
 	if ( !level.hardpointModeInitialized )
@@ -215,8 +216,115 @@ function CapturePoint_Update( hardpoint )
 	// terminate old CappingWait thread if any
 	hardpoint.Signal( CP_END_CAPPING_WAIT_SIGNAL )
 	hardpoint.Signal( "CapturePointUpdate" )
+	
+	// Get counts for players and AI on each team
+	local imcPlayers = hardpoint.GetHardpointPlayerCount( TEAM_IMC )
+	local imcAI = hardpoint.GetHardpointAICount( TEAM_IMC )
+	local imcTitans = hardpoint.GetHardpointPlayerTitanCount( TEAM_IMC )
 
-	local powerTable = GetCapPower( hardpoint )
+	local milPlayers = hardpoint.GetHardpointPlayerCount( TEAM_MILITIA )
+	local milAI = hardpoint.GetHardpointAICount( TEAM_MILITIA )
+	local milTitans = hardpoint.GetHardpointPlayerTitanCount( TEAM_MILITIA )
+
+	local touchingEnts = hardpoint.s.trigger.GetTouchingEntities()
+	foreach ( ent in touchingEnts )
+	{
+		if ( ( ent.IsNPC() || ent.IsPlayer() ) && ent.IsTitan() )
+		{
+			if ( ent.GetTeam() == TEAM_IMC )
+				imcTitans++
+			else if ( ent.GetTeam() == TEAM_MILITIA )
+				milTitans++
+		}
+	}
+
+	local imcPower = 0.0
+	local milPower = 0.0
+	local players = GetPlayerArray()
+	if ( players.len() > 0 )
+	{
+		local playerTeam = players[0].GetTeam()
+		
+		if ( playerTeam == TEAM_MILITIA )
+		{
+			// PLAYER IS MILITIA: 
+			// Enemy (IMC) grunts get 3.0x buff
+			imcPower = ( imcPlayers + imcAI ) * CAPTURE_POINT_PLAYER_CAP_POWER * 3.0
+			
+			// Friendly (Militia) player gets explicit 1.5x buff, AI gets a small buff
+			milPower = ( milPlayers * CAPTURE_POINT_PLAYER_CAP_POWER * 1.5 ) + ( milAI * CAPTURE_POINT_PLAYER_CAP_POWER * 0.5)
+		}
+		else if ( playerTeam == TEAM_IMC )
+		{
+			// PLAYER IS IMC: 
+			// Enemy (Militia) grunts get 3.0x buff
+			milPower = ( milPlayers + milAI ) * CAPTURE_POINT_PLAYER_CAP_POWER * 3.0
+			
+			// Friendly (IMC) player gets explicit 1.5x buff, AI gets a small buff
+			imcPower = ( imcPlayers * CAPTURE_POINT_PLAYER_CAP_POWER * 1.5 ) + ( imcAI * CAPTURE_POINT_PLAYER_CAP_POWER * 0.5)
+		}
+	}
+	else
+	{
+		// Fallback for neutral/unassigned state
+		imcPower = ( imcPlayers + imcAI ) * CAPTURE_POINT_PLAYER_CAP_POWER
+		milPower = ( milPlayers + milAI ) * CAPTURE_POINT_PLAYER_CAP_POWER
+	}
+
+	// Initialize a fresh table to guarantee the keys exist
+	local powerTable = 
+	{
+		strongerTeam = TEAM_UNASSIGNED,
+		power = 0.0,
+		contested = false
+	}
+
+	local imcPresence = ( imcPlayers + imcAI ) > 0
+	local milPresence = ( milPlayers + milAI ) > 0
+
+	if ( imcTitans > 0 && milTitans == 0 )
+	{
+		// IMC Titan overrides all Militia presence (players and minions)
+		powerTable.strongerTeam = TEAM_IMC
+		powerTable.power = CAPTURE_POINT_MAX_CAP_POWER * 0.75
+		powerTable.contested = false
+	}
+	else if ( milTitans > 0 && imcTitans == 0 )
+	{
+		// Militia Titan overrides all IMC presence (players and minions)
+		powerTable.strongerTeam = TEAM_MILITIA
+		powerTable.power = CAPTURE_POINT_MAX_CAP_POWER * 0.75
+		powerTable.contested = false
+	}
+	else if ( imcPresence && milPresence )
+	{
+		// Both teams are on the point without an overriding Titan, force a contested state
+		powerTable.strongerTeam = TEAM_UNASSIGNED
+		powerTable.power = 0.0
+		powerTable.contested = true
+	}
+	else if ( imcPower > milPower )
+	{
+		powerTable.strongerTeam = TEAM_IMC
+		powerTable.power = imcPower - milPower
+		powerTable.contested = false
+	}
+	else if ( milPower > imcPower )
+	{
+		powerTable.strongerTeam = TEAM_MILITIA
+		powerTable.power = milPower - imcPower
+		powerTable.contested = false
+	}
+	else
+	{
+		powerTable.strongerTeam = TEAM_UNASSIGNED
+		powerTable.power = 0.0
+		powerTable.contested = false
+	}
+
+	// Respect the speed cap set in _settings.nut
+	if ( powerTable.power > CAPTURE_POINT_MAX_CAP_POWER )
+		powerTable.power = CAPTURE_POINT_MAX_CAP_POWER
 
 	local baseCaptureTime = level.hardpointCaptureTime
 

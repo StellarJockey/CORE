@@ -1,30 +1,15 @@
 
-const MAP_GRID_COLUMNS = 3
-const MAP_GRID_ROWS = 3
-const MAP_GRID_TILES = 9 // MAP_GRID_COLUMNS * MAP_GRID_ROWS
-const MAP_GRID_PAGE_ROWS = 3 // one page = the rows visible at once
-
-// Map preview column (thumbnail, name, description), in menu units (see MapInfoBackground / NextMapDesc in map_select.menu)
-const MAP_INFO_MIN_HEIGHT = 108
-const MAP_INFO_DESC_OFFSET = 35 // description top relative to the backdrop top
-const MAP_INFO_PADDING = 8 // space below the description
-const MAP_INFO_PACK_SHIFT = 10 // how far the description moves down when the pack line is shown
-const MAP_INFO_TEXT_INSET = 7 // map name / description left edge relative to the backdrop left edge
-const MAP_INFO_TEXT_MARGIN = 3 // space kept free to the right of the map name
-
-const MAP_GRID_REPEAT_DELAY = 0.4 // seconds before a held stick / d-pad direction starts repeating scrolls
-const MAP_GRID_REPEAT_RATE = 0.1 // seconds between repeated scrolls
+const MAP_LIST_VISIBLE_ROWS = 17 // FO
+const MAP_LIST_SCROLL_SPEED = 0
 
 function main()
 {
 	Globalize( InitMapsMenu )
 	Globalize( OnOpenMapsMenu )
 	Globalize( OnCloseMapsMenu )
-	Globalize( OpenMapVoteMenu )
 
 	RegisterSignal( "OnCloseMapsMenu" )
 }
-
 
 function InitMapsMenu()
 {
@@ -34,279 +19,83 @@ function InitMapsMenu()
 	AddEventHandlerToButtonClass( menu, "MapButtonClass", UIE_GET_FOCUS, Bind( MapButton_Focused ) )
 	AddEventHandlerToButtonClass( menu, "MapButtonClass", UIE_LOSE_FOCUS, Bind( MapButton_LostFocus ) )
 	AddEventHandlerToButtonClass( menu, "MapButtonClass", UIE_CLICK, Bind( MapButton_Activate ) )
-	AddEventHandlerToButtonClass( menu, "MapPageUpClass", UIE_CLICK, Bind( OnMapListPageUp_Activate ) )
-	AddEventHandlerToButtonClass( menu, "MapPageDownClass", UIE_CLICK, Bind( OnMapListPageDown_Activate ) )
-	AddEventHandlerToButtonClass( menu, "MapRandomClass", UIE_CLICK, Bind( OnRandomMapButton_Activate ) )
+	AddEventHandlerToButtonClass( menu, "MapListScrollUpClass", UIE_CLICK, Bind( OnMapListScrollUp_Activate ) )
+	AddEventHandlerToButtonClass( menu, "MapListScrollDownClass", UIE_CLICK, Bind( OnMapListScrollDown_Activate ) )
 
 	file.starsLabel <- menu.GetChild( "StarsLabel" )
 	file.star1 <- menu.GetChild( "MapStar0" )
 	file.star2 <- menu.GetChild( "MapStar1" )
 	file.star3 <- menu.GetChild( "MapStar2" )
-	file.infoDesc <- menu.GetChild( "NextMapDesc" )
-	file.packLabel <- menu.GetChild( "NextMapPack" )
-	file.descBasePos <- file.infoDesc.GetBasePos()
-	file.descShift <- 0 // menu units
-	// The same name in three fonts, largest first; FitMapName() shows the largest one that fits the box
-	file.nameLabels <- [ menu.GetChild( "NextMapName" ), menu.GetChild( "NextMapNameMed" ), menu.GetChild( "NextMapNameSmall" ) ]
-	file.infoBackdrop <- menu.GetChild( "MapInfoBackground" )
 
-	// Buttons that got an event handler above are already created as elements; GetChild() on them throws.
-	// Look them up by classname instead.
-	file.pagingElems <- []
-	foreach ( className in [ "MapPageUpClass", "MapPageDownClass" ] )
-		file.pagingElems.extend( GetElementsByClassname( menu, className ) )
+	file.buttons <- GetElementsByClassname( menu, "MapButtonClass" )
+	foreach ( button in file.buttons )
+		button.s.dlcGroup <- null
 
-	// Page glyphs: mouse wheel images for mouse and keyboard, shoulder button glyphs while a controller is in use
-	file.mouseGlyphs <- GetElementsByClassname( menu, "MapPagingGlyphClass" )
-	file.padGlyphs <- GetElementsByClassname( menu, "MapPagingGamepadGlyphClass" )
-	foreach ( elem in file.padGlyphs )
-		elem.EnableKeyBindingIcons() // Without this the glyph tokens in the label text are drawn literally
-	file.controllerGlyphs <- null
-	file.randomHint <- menu.GetChild( "RandomMapGamepadHint" )
-	file.randomHint.EnableKeyBindingIcons()
-	file.randomPending <- false
-
-	file.pageLabel <- menu.GetChild( "PageLabel" )
-	file.pagingElems.append( file.pageLabel )
-
-	// file.tiles is indexed by scriptID: slot 0 is the top-left tile, slots run left to right, then top to bottom
-	file.tiles <- []
-	file.tiles.resize( MAP_GRID_TILES )
-	foreach ( button in GetElementsByClassname( menu, "MapButtonClass" ) )
-	{
-		button.s.mapName <- null
-		button.s.dlcGroup <- 0
-		file.tiles[ button.GetScriptID().tointeger() ] = button
-	}
-
-	file.mapsArray <- []
-	file.scrollRow <- 0
-	file.maxScrollRow <- 0
-	file.focusSlot <- 0
-	file.voteType <- null // eVoteType while this menu is picking a map to vote for; null for Private Match
-	file.pendingVoteType <- null
-	file.voteAllowed <- true
-	file.randomButton <- GetElementsByClassname( menu, "MapRandomClass" )[0]
+	file.numMapButtonsOffScreen <- null
+	file.mapListScrollState <- 0
 }
 
 function OnOpenMapsMenu()
 {
-	// OpenMapVoteMenu() queues the vote type; a plain re-open of an already voting menu keeps it
-	if ( file.pendingVoteType != null )
-		file.voteType = file.pendingVoteType
-	file.pendingVoteType = null
+	local buttons = file.buttons
+	local mapsArray = GetPrivateMatchMaps()
 
-	// Votes only exist inside a match; the lobby always shows the Private Match map list, whatever state was left behind
-	if ( IsLobby() )
-		file.voteType = null
-	file.voteAllowed = true
-	file.randomPending = false
+	if ( mapsArray.len() > buttons.len() )
+		printt( "MapsMenu: " + mapsArray.len() + " maps but only " + buttons.len() + " buttons, add more to the .menu" )
 
-	file.mapsArray = GetPrivateMatchMaps()
+	file.numMapButtonsOffScreen = max( 0, mapsArray.len() - MAP_LIST_VISIBLE_ROWS )
 
-	local totalRows = ( file.mapsArray.len() + MAP_GRID_COLUMNS - 1 ) / MAP_GRID_COLUMNS
-	file.maxScrollRow = totalRows - MAP_GRID_ROWS
-	if ( file.maxScrollRow < 0 )
-		file.maxScrollRow = 0
-
-	// Open with the currently selected map in the middle row so there is context above and below it
-	file.scrollRow = 0
-	file.focusSlot = 0
-	local currentMap = GetCurrentMapName()
-	local currentIndex = null
-	foreach ( index, mapName in file.mapsArray )
+	foreach ( button in buttons )
 	{
-		if ( mapName == currentMap )
+		local buttonID = button.GetScriptID().tointeger()
+
+		if ( buttonID >= 0 && buttonID < mapsArray.len() )
 		{
-			currentIndex = index
-			break
+			if (GetModeNameForEnum(level.ui.privatematch_mode) == "campaign_carousel") {
+				button.SetText( GetCampaignMapDisplayName( mapsArray[buttonID] ) )
+			} else {
+				button.SetText( GetMapDisplayName( mapsArray[buttonID] ) )
+			}
+
+			button.SetEnabled( true )
+			button.s.dlcGroup = GetDLCMapGroupForMap( mapsArray[buttonID] )
+		}
+		else
+		{
+			button.SetText( "" )
+			button.SetEnabled( false )
+		}
+
+		if ( buttonID < mapsArray.len() && mapsArray[buttonID] == GetPrivateMatchMapNameForEnum( level.ui.privatematch_map ) )
+		{
+			printt( buttonID, mapsArray[buttonID] )
+			button.SetFocused()
 		}
 	}
-
-	if ( currentIndex != null )
-	{
-		file.scrollRow = clamp( currentIndex / MAP_GRID_COLUMNS - 1, 0, file.maxScrollRow )
-		file.focusSlot = currentIndex - file.scrollRow * MAP_GRID_COLUMNS
-	}
-
-	local paged = file.maxScrollRow > 0
-	foreach ( elem in file.pagingElems )
-		elem.SetVisible( paged )
-
-	file.controllerGlyphs = null
-	UpdatePagingGlyphs()
-
-	RefreshMapTiles()
-	file.tiles[ file.focusSlot ].SetFocused()
 
 	file.starsLabel.Hide()
 	file.star1.Hide()
 	file.star2.Hide()
 	file.star3.Hide()
 
-	RegisterMapGridInput()
+	RegisterButtonPressedCallback( MOUSE_WHEEL_UP, OnMapListScrollUp_Activate )
+	RegisterButtonPressedCallback( MOUSE_WHEEL_DOWN, OnMapListScrollDown_Activate )
 
 	UpdateDLCMapButtons()
 
-	if ( IsMapVoteMode() )
-		thread MonitorVoteAvailability()
-	else
-		thread MonitorDLCAvailability()
-
-	thread MonitorControllerMode()
-}
-
-function OnCloseMapsMenu()
-{
-	Signal( uiGlobal.signalDummy, "OnCloseMapsMenu" )
-
-	DeregisterMapGridInput()
-
-	file.voteType = null
-}
-
-// The engine throws when a callback is registered twice or deregistered when it is not registered.
-// Menus can be left without OnClose running (level change, disconnect), so both directions are guarded.
-function RegisterMapGridInput()
-{
-	foreach ( binding in GetMapGridInputBindings() )
-	{
-		try
-		{
-			RegisterButtonPressedCallback( binding[0], binding[1] )
-		}
-		catch ( e )
-		{
-		}
-	}
-}
-
-function DeregisterMapGridInput()
-{
-	foreach ( binding in GetMapGridInputBindings() )
-	{
-		try
-		{
-			DeregisterButtonPressedCallback( binding[0], binding[1] )
-		}
-		catch ( e )
-		{
-		}
-	}
-}
-
-function GetMapGridInputBindings()
-{
-	return [
-		[ MOUSE_WHEEL_UP, OnMapListScrollUp_Activate ],
-		[ MOUSE_WHEEL_DOWN, OnMapListScrollDown_Activate ],
-		[ KEY_UP, OnMapGridNavUp ],
-		[ KEY_DOWN, OnMapGridNavDown ],
-		[ KEY_PAGEUP, OnMapListPageUp_Activate ],
-		[ KEY_PAGEDOWN, OnMapListPageDown_Activate ],
-	]
-}
-
-function IsMapVoteMode()
-{
-	return file.voteType != null
-}
-
-// Opens this menu to pick the target of a "Change Level" / "Next Level" vote instead of a Private Match map
-function OpenMapVoteMenu( voteType )
-{
-	file.pendingVoteType = voteType
-	AdvanceMenu( file.menu )
-}
-
-function GetCurrentMapName()
-{
-	if ( IsMapVoteMode() )
-		return GetActiveLevel()
-
-	return GetPrivateMatchMapNameForEnum( level.ui.privatematch_map )
-}
-
-function IsCampaignMapList()
-{
-	if ( IsMapVoteMode() )
-		return GetCurrentPlaylistName() == CAMPAIGN
-
-	return GetModeNameForEnum( level.ui.privatematch_mode ) == "campaign_carousel"
-}
-
-function GetMapListDisplayName( mapName )
-{
-	if ( IsCampaignMapList() )
-		return GetCampaignMapDisplayName( mapName )
-
-	return GetMapDisplayName( mapName )
-}
-
-function GetMapListImage( mapName )
-{
-	return GetMapImage( mapName )
-}
-
-// Fills every tile from the window of file.mapsArray starting at file.scrollRow
-function RefreshMapTiles()
-{
-	local firstIndex = file.scrollRow * MAP_GRID_COLUMNS
-
-	for ( local slot = 0; slot < MAP_GRID_TILES; slot++ )
-	{
-		local button = file.tiles[ slot ]
-		local index = firstIndex + slot
-
-		if ( index >= file.mapsArray.len() )
-		{
-			button.s.mapName = null
-			button.s.dlcGroup = 0
-			button.SetLocked( false )
-			button.SetEnabled( false )
-			button.SetVisible( false )
-			continue
-		}
-
-		local mapName = file.mapsArray[ index ]
-		local displayName = GetMapListDisplayName( mapName )
-
-		button.s.mapName = mapName
-		button.s.dlcGroup = IsMapVoteMode() ? 0 : GetDLCMapGroupForMap( mapName )
-
-		button.GetChild( "MapImage" ).SetImage( GetMapListImage( mapName ) )
-
-		button.GetChild( "MapName" ).SetText( displayName )
-		ShowTileName( button )
-
-		button.SetEnabled( true )
-		button.SetVisible( true )
-	}
-
-	UpdateDLCMapButtons()
-
-	local lastIndex = min( firstIndex + MAP_GRID_TILES, file.mapsArray.len() )
-	file.pageLabel.SetText( "MAPS " + ( firstIndex + 1 ) + "-" + lastIndex + " OF " + file.mapsArray.len() )
+	thread MonitorDLCAvailability()
 }
 
 function UpdateDLCMapButtons()
 {
-	foreach ( button in file.tiles )
+	local buttons = file.buttons
+
+	foreach ( button in buttons )
 	{
-		if ( IsMapVoteMode() )
-		{
-			button.SetLocked( !file.voteAllowed )
+		if ( button.s.dlcGroup == null || button.s.dlcGroup < 1 )
 			continue
-		}
 
-		if ( button.s.dlcGroup < 1 )
-		{
-			button.SetLocked( false )
-			continue
-		}
-
-		// Titanfall 2 maps are unusable for a player without a usable install even when the server (override, or a host that has one) allows them
-		if ( ServerHasDLCMapGroupEnabled( button.s.dlcGroup ) && ( button.s.dlcGroup != R2_MAP_DLC_GROUP || LocalPlayerOwnsDLCMapGroup( R2_MAP_DLC_GROUP ) ) )
+		if ( ServerHasDLCMapGroupEnabled( button.s.dlcGroup ) )
 			button.SetLocked( false )
 		else
 			button.SetLocked( true )
@@ -323,18 +112,7 @@ function UpdateMapButtonTooltip( button )
 	if ( button.s.dlcGroup > 0 )
 	{
 		if ( !LocalPlayerOwnsDLCMapGroup( button.s.dlcGroup ) )
-		{
-			if ( button.s.dlcGroup == R2_MAP_DLC_GROUP )
-			{
-				// The game says why it has no usable Titanfall 2 install (not found, a server file set, unreadable packs)
-				local reason = GetConVarString( "r1delta_titanfall2_status" )
-				if ( reason == "" )
-					reason = "#R2_INSTALL_REQUIRED_HINT"
-				HandleLockedCustomMenuItem( menu, button, ["#R2_INSTALL_REQUIRED", reason] )
-			}
-			else
-				HandleLockedCustomMenuItem( menu, button, ["#DLC_REQUIRED"] )
-		}
+			HandleLockedCustomMenuItem( menu, button, ["#DLC_REQUIRED"] )
 		else if ( !ServerHasDLCMapGroupEnabled( button.s.dlcGroup ) )
 			HandleLockedCustomMenuItem( menu, button, ["#NOT_OWNED_BY_ALL_PLAYERS"] )
 		else
@@ -342,111 +120,168 @@ function UpdateMapButtonTooltip( button )
 	}
 }
 
+function OnCloseMapsMenu()
+{
+	DeregisterButtonPressedCallback( MOUSE_WHEEL_UP, OnMapListScrollUp_Activate )
+	DeregisterButtonPressedCallback( MOUSE_WHEEL_DOWN, OnMapListScrollDown_Activate )
+
+	Signal( uiGlobal.signalDummy, "OnCloseMapsMenu" )
+}
+
+// Titanfall 1 maps keep the FO lobby image naming; the converted Titanfall 2 maps use the base game's image lookup
+function GetMapListImage( mapName )
+{
+	switch ( mapName )
+	{
+		case "mp_coliseum":
+		case "mp_coliseum_column":
+		case "mp_lf_deck":
+		case "mp_lf_meadow":
+		case "mp_lf_stacks":
+		case "mp_lf_township":
+		case "mp_lf_traffic":
+		case "mp_lf_uma":
+			return GetMapImage( mapName )
+	}
+
+	return "../ui/menu/lobby/lobby_image_" + mapName + "_v2"
+}
+
 function MapButton_Focused( button )
 {
-	file.focusSlot = button.GetScriptID().tointeger()
-
-	local mapName = button.s.mapName
-	if ( mapName == null )
-		return
+	local buttonID = button.GetScriptID().tointeger()
 
 	local menu = file.menu
 	local nextMapImage = menu.GetChild( "NextMapImage" )
+	local nextMapName = menu.GetChild( "NextMapName" )
 	local nextMapDesc = menu.GetChild( "NextMapDesc" )
 
+	// White text for readability
+	nextMapName.SetColor( 255, 255, 255 )
+	nextMapDesc.SetColor( 255, 255, 255 )
+
+	local mapsArray = GetPrivateMatchMaps()
+	local mapName = mapsArray[buttonID]
 	nextMapImage.SetImage( GetMapListImage( mapName ) )
-	local displayName = GetMapListDisplayName( mapName )
-	foreach ( label in file.nameLabels )
-		label.SetText( displayName )
-	// Pick the font now, in this frame, so the title is never blank; FitMapName() corrects it if the width changes once laid out
-	ApplyMapNameFit()
-	thread FitMapName()
-	UpdateMapPackLine( mapName )
-	if ( IsCampaignMapList() )
-		nextMapDesc.SetText( "#" + mapName + "_CAMPAIGN_MENU_DESC" )
+	
+
+	if (GetModeNameForEnum(level.ui.privatematch_mode) == "campaign_carousel") {
+		nextMapName.SetText( GetCampaignMapDisplayName( mapName ) )
+
+		local campaignDescriptions = {
+			mp_fracture =    "1750 Hours, July 15, 2710\nThe 1st Militia Fleet arrives in orbit around Victor, desperately low on fuel. They've embedded a civilian trading convoy into their ranks, as to not trigger the IMC's orbital defense array. They'll either get the fuel or die trying."
+			mp_colony =      "1604 Hours, July 20, 2710\nArriving in search of Militia fugitives, IMC recon satellites have found something far worse on planet Troy. But in trying to reclaim the Vice Admiral's lost ship, an old war hero is forced out of hiding..."
+			mp_relic =       "1800 Hours, July 20, 2710\nMacAllan makes a deal with the Militia. Their mission is to get the surviving colonists out of harm's way. In exchange, they will receive the Odyssey's black box. If MacAllan is to be believed, it may hold the key to defeating the IMC..."
+			mp_angel_city =  "1530 Hours, August 2, 2710\nAfter some digging, Bish has found the next part of MacAllan's plan: an air traffic controller in Angel City's harbor district. But the IMC's Spyglass Network is everywhere. Getting in is the easy part. Getting out will be... less so."
+			mp_outpost_207 = "0105 Hours, August 4, 2710\nMacAllan's gambit during the Battle of Angel City paid off. The IMS Sentinel retreats to a space drydock, guarded by Outpost 207. The Militia sends in a strike team to take out the ship, with the Vice Admiral still onboard."
+			mp_boneyard =    "1311 Hours, August 12, 2710\nAgainst his better judgement, Barker takes the Militia to the Boneyard, the site of an abandoned IMC research facility. Bish's job is to collect data on the tower before the IMC can scuttle the base."
+			mp_airbase =     "0506 Hours, August 29, 2710\nAt the eleventh hour, IMC reinforcements prepare to lift off from Airbase Sierra. Commander Sarah Briggs leads a strike team inside the base, now armed with Bish's tower-crippling virus: a program he calls the 'Icepick.'"
+			mp_o2 =          "0700 Hours, August 29, 2710\nThe 1st Militia Fleet launches its final assault on the gate-world of Demeter. While Bish leads a cyber-attack against the Spyglass Network, MacAllan and Vice Admiral Graves play out their long-awaited endgame..."
+			mp_corporate =   "1530 Hours, December 5, 2710\nIn the epilogue of Demeter's destruction, Marcus Graves was court-martialed for lying under oath about his role in the Odyssey's mutiny. But after being rescued from a Colonial Navy black site, he now forms an uneasy alliance with the Militia."
+		}
+
+		if ( mapName in campaignDescriptions ) {
+			nextMapDesc.SetText( campaignDescriptions[mapName] )
+		} else {
+			nextMapDesc.SetText( "#" + mapName + "_CAMPAIGN_MENU_DESC" )
+		}
+	}
 	else
-		nextMapDesc.SetText( GetMapDisplayDesc( mapName ) )
+	{
+		nextMapName.SetText( GetMapDisplayName( mapName ) )
 
-	thread ResizeMapInfoBackdrop()
+		// --- CUSTOM MAP DESCRIPTION OVERRIDES ---
+		local customDescriptions = {
+			mp_fracture = "Planet Victor, Yuma System\nYears of aggressive fuel extracting have taken their toll on this former colony for the privileged. It has since been abandoned, with entire continents being turned upside down.",
+			mp_nexus = "Planet Harmony, Freeport System\nIMC forces preform a routine search at a hydroponics outpost that is suspected of harboring Militia personnel. Unbeknownst to them, this planet is the Frontier Militia's current base of operations.",
+			mp_overlook = "Planet Galen, Omaha System\nThis armament facility has been illegally repurposed by the IMC into a temporary prison complex. The Militia attempt to rescue a platoon being held in maximum security.",
+			mp_o2 = "Planet Demeter, Demeter System\nThis world-spanning refinery is responsible for fueling both naval and commercial fleets entering and leaving the Frontier. While solar fields harvest energy from a dying red giant, nuclear reactors are kept on for emergency power in the event of a solar flare.",
+			mp_outpost_207 = "Ino, moon of Harmony\nOrbital defense cannons are stationed at high altitude to fend off against incursions from hostile capital ships. This outpost is responsible defending an IMC shipyard in the Freeport System.",
+			mp_airbase = "Despoina, fourth moon of Demeter\nAirbase Sierra is defended against local wildlife by the latest generation of repulsor towers. It is the single largest airfield in the Frontier, with ships requiring minimal fuel for takeoff due to the low gravity.",
+			mp_relic = "Planet Troy, Sector Bravo-217\nParts from this IMC shipwreck are salvaged and sent to the valley below. Officially, this Andromeda-class carrier was reported lost after a \"Militia sabotage\", leading to the IMC's famous recruitment campaign: \"Remember the Odyssey.\"",
+			mp_colony = "Planet Troy, Sector Bravo-217\nThis abandoned farm colony was built from the wreckage of the ghost ship, IMS Odyssey. During the trial of Marcus Graves, the IMC was forced to reveal the true fate of the Odyssey to the public - though no evidence of a \"Spectre massacre\" was found.",
+			mp_angel_city = "Planet Angelia, Wichita System\nAngel City is one of the largest human settlements on the Froniter. When the IMC instituted martial law, massive walls were built to divide the city into smaller districts. It has recently entered the tenth year of its temporary \"two-week\" lockdown.",
+			mp_smugglers_cove = "Planet Navaria, Freeport System\nPart arms bazaar and part pirate enclave, Smuggler's Cove is infamous for its selection of mercenaries and black-market kits. Visitors are searched by the 'welcoming committee' before being taken to the mainland.",
+			mp_wargames = "NS-5 Server Cluster, Planet Calidus\nPilot Certification Simulators are networked together for multi-Pilot training sessions. Using data gathered from previous defeats, this advanced IMC program seeks to push Pilots even further.",
+			mp_rise = "Planet Gridiron, Wichita System\nMilitia forces have set up a reconnaissance outpost in an abandoned IMC reservoir. Gridiron lies on the inner edge of its star's habitable zone, but the star has since expanded, leaving its surface baked by solar radiation.",
+			mp_boneyard = "Planet Leviathan, Badlands System\nMany years ago, the first Dog-Whistle Tower was built at this IMC facility, using ultrasonic frequencies to repel hostile wildlife. Its existence has since been purged from all written records.",
+			mp_training_ground = "Planet Gridiron, Wichita System\nWith \"Only the Strong Survive\" as its slogan, this Pilot training regiment claims to have a 98 percent fatality rate - but that assumes their numbers are to be trusted. The IMC are well known for their propaganda.",
+			mp_corporate = "Northwestern continent, Planet Galen\nApplied Robotics labs on the Frontier, such as this one, developed the first automated infantry \"Spectre\" units. Hammond Robotics is an IMC Premier Technology Company, with many secrets being hidden under NDAs.",
+			mp_lagoon = "Planet Navaria, Freeport System\nAn IMC carrier makes an emergency landing on a small fishing village, though it is unlikely they're here to ask the locals for directions.",
 
-	if ( !IsPrivateMatch() && !IsMapVoteMode() )
+			mp_haven = "Planet Harmony, Freeport System\nThis luxury retreat for the wealthy was built on the edge of a massive crater lake. Many of its frequenters have stocks in defense contracting, and are very interested in seeing the Frontier's war continue.",
+			mp_swampland = "Planet Calidus, Delta Sector\nDrainage operations have revealed ancient ruins of unknown origin. Vice Admiral Spyglass dispatches a team to investigate, at the request of the IMC's secretive Archeological Research Division...",
+			mp_runoff = "Planet Calidus, Delta Sector\nOnce owned by a neutral terraforming company, the IMC has forcefully taken this water treatment facility. This world has been chosen as the new Fleet Operations Base for the IMC Navy following the Battle of Demeter.",
+			mp_harmony_mines = "Planet Harmony, Freeport System\nEnergy-rich ores are extracted at this mining facility owned by Kodai Industries. Lithium, cobalt, and tungsten carbide are instrumental for the Frontier's war machine.",
+			mp_backwater = "Planet Angelia, Wichita System\nHigh in the mountains, ex-IMC pilot Barker and his cohort made a comfortable living producing moonshine in this hidden bootlegging colony - prior to his abduction in Angel City. It brings memories of Earth and other worlds that were left behind.",
+			mp_switchback = "Planet Harmony, Freeport System\nSituated near a Kodai mining facility, this mountainside settlement is responsible for cheaply transporting goods and materials. It harkens back to the Gold Rush-era boomtowns of centuries prior.",
+			mp_zone_18 = "Planet Cybele, Dakota System\nHidden in a vast wilderness, an abandoned IMC research facility has been reactivated after the attack on Hammond Robotics' corporate HQ. Intel suggests a new Spectre model is being developed here."
+			mp_sandtrap = "Midas, desert moon of Cybele\nBeyond the Frontier's established shipping lanes, this facility holds deep reservoirs of unrefined fuel. This fuel creates a negative energy density that satisfies the Einstein-Alcubierre metric, allowing for faster-than-light travel.",
+			
+			mp_box = "Bish's Personal Computer, MCS Annapolis\nHammond Robotics' \"Dev-Box\" Environment was an early proof of concept for using VR in combat simulations. It is now used for debugging and stress testing new features.",
+			mp_nest2 = "Planet Meridian, Everglades System\nFollowing a massive data breach, IMC operatives must infiltrate one of their own facilities to destroy critical information related to Project PERISCOPE before it can be leaked.",
+			mp_mia = "Southern continent, Planet Demeter\nA group of IMC and Militia forces make their last stand near the crash site of the IMS Rubicon. After several days of holding out in the desert, rescue teams have finally arrived.",
+			mp_npe = "MCS Alexandria, en route to Horizon Station\nSimulation Training Pods are used for Pilot certification exams, though many have been cracked and distributed by criminal networks. Remember, piracy is a crime.",
+
+			mp_complex3 = "Planet Typhon, Sector Echo-152\nThe Fermi Research Complex is dedicated to studying xenoarcheology and galactic fossil records, operated by the IMC’s ARES Division. Ruins found on Calidus have led them to a megastructure of unknown origin on Typhon.",
+			mp_eden = "Planet Eden, Yuma System\nThis settlement in the Meng desert was sold as a prosperous worker village for oil drilling, but became a ghost town due to poor working conditions. The few who remain are bound by the IMC’s strict employee contracts.",
+			mp_thaw = "Planet Tiamat, Badlands System\nThis BSL-5 research outpost is set on a remote Frontier world owned by Grow Incorporated. An invasive species that produces highly toxic spores has been quarantined here, and is now being carefully monitored.",
+			mp_black_water_canal = "Planet Cibus, Coyote System\nThis fuel storage depot was built by Dionysys, a respected IMC subsidiary. With the loss of Demeter, this world has become an important pitstop for ships traveling between Demeter and the Frontier's Heartland systems.",
+			mp_grave = "Planet Typhon, Sector Echo-152\nThis IMC Simulation Dome was built deep underground, made for simulating combat scenarios in urban environments. Its construction was outsourced to Vinson Dynamics, as a way for the IMC to avoid liability for any accidents.",
+			mp_crashsite3 = "Planet Typhon, Sector Echo-152\nAfter the MCS James MacAllan was shot down during Operation Broadsword, the surviving crew members band together to form a resistance on a hostile new planet.",
+			mp_drydock = "Planet Navaria, Freeport System\nRetired carriers are scrapped for parts at this old shipping yard. Unlike the one guarded by Outpost 207, this drydock is planet-side, with large derelicts slowly collapsing under their own weight.",
+			mp_forwardbase_kodai = "Planet Meridian, Everglades System\nThis IMC interstellar beacon is the middle part of a three-beacon chain between the Wichita system and Sector Echo-152. It was the first to report an unknown cataclysmic event that shattered the moons of several inhabited worlds."
+			mp_homestead = "Planet Lemuria, Somnus System\nDescended from the Frontier’s first colonists, this settlement has remained untouched by the IMC. Though Lemuria's wealth of resources would make it a target, its distance from the Frontier Heartlands makes frequent FTL travel unfeasible.",
+			mp_glitch = "OSET Sever 8-1, Planet Harmony\nBased on the Silver Coast of Harmony's eastern continent, this MCOR training program was decompiled from a low-end IMC cluster.",
+			mp_colony02 = "NS-5 Server Cluster, Planet Calidus\nAfter being burned down by the IMC as part of their failed cover-up, this township has been digitally re-created as part of the their War Games 2.0 initiative.",
+			mp_relic02 = "NS-5 Server Cluster, Planet Calidus\nThough the real IMS Odyssey was scrapped during the IMC's failed cover-up, this re-creation now exists as part of the War Games 2.0 initiative.\"",
+		}
+
+		if ( mapName in customDescriptions ) {
+			nextMapDesc.SetText( customDescriptions[mapName] )
+		} else {
+			nextMapDesc.SetText( GetMapDisplayDesc( mapName ) )
+		}
+	}
+	if ( !IsPrivateMatch() )
 	{
 		file.starsLabel.Show()
 		UpdateSelectedMapStarData( menu, mapName, "coop" )
 	}
 
-	UpdateMapButtonTooltip( button )
+	// Update window scrolling if we highlight a map not in view
+	local minScrollState = clamp( buttonID - (MAP_LIST_VISIBLE_ROWS - 1), 0, file.numMapButtonsOffScreen )
+	local maxScrollState = clamp( buttonID, 0, file.numMapButtonsOffScreen )
+
+	if ( file.mapListScrollState < minScrollState )
+		file.mapListScrollState = minScrollState
+	if ( file.mapListScrollState > maxScrollState )
+		file.mapListScrollState = maxScrollState
+
+	UpdateMapListScroll()
+	delaythread( 0.02 ) UpdateMapButtonTooltip( button ) // Hacky delay needed or tooltip position will use the button position prior to scroll offset
 }
 
 function MapButton_LostFocus( button )
 {
 	HandleLockedCustomMenuItem( file.menu, button, [], true )
-
-	// The engine hides the focus group's children (including the name) as focus leaves; the names should always show.
-	// Re-show them once the engine is done with the focus change.
-	delaythread( 0.05 ) ShowTileName( button )
-}
-
-function ShowTileName( button )
-{
-	button.GetChild( "MapNameBG" ).SetVisible( true )
-	button.GetChild( "MapName" ).SetVisible( true )
 }
 
 function MapButton_Activate( button )
 {
 	if ( button.IsLocked() )
 	{
-		// The tooltip already says what a Titanfall 2 map needs; the Titanfall DLC store has nothing to sell for it
-		if ( !IsMapVoteMode() && button.s.dlcGroup != R2_MAP_DLC_GROUP && !LocalPlayerOwnsDLCMapGroup( button.s.dlcGroup ) )
+		if ( !IsMapVoteMode() && !LocalPlayerOwnsDLCMapGroup( button.s.dlcGroup ) )
 			ShowDLCStore()
 
 		return
 	}
 
-	ChooseMap( button.s.mapName )
-}
+	local mapsArray = GetPrivateMatchMaps()
+	local mapID = button.GetScriptID().tointeger()
+	local mapName = mapsArray[mapID]
 
-// Picks a random map from the current list, skipping the special maps (Box, M.I.A, Certification, Nest), DLC maps the
-// server can't use, and the map that is already selected. They can still be picked by hand.
-function OnRandomMapButton_Activate( button )
-{
-	local currentMap = GetCurrentMapName()
-	local skipMaps = { mp_box = true, mp_mia = true, mp_npe = true, mp_nest2 = true }
-	local candidates = []
-
-	foreach ( mapName in file.mapsArray )
-	{
-		if ( mapName in skipMaps )
-			continue
-
-		local dlcGroup = GetDLCMapGroupForMap( mapName )
-		if ( dlcGroup > 0 && !ServerHasDLCMapGroupEnabled( dlcGroup ) )
-			continue
-
-		if ( dlcGroup == R2_MAP_DLC_GROUP && !LocalPlayerOwnsDLCMapGroup( R2_MAP_DLC_GROUP ) )
-			continue
-
-		if ( mapName != currentMap )
-			candidates.append( mapName )
-	}
-
-	if ( candidates.len() == 0 )
-		return
-
-	ChooseMap( Random( candidates ) )
-}
-
-function ChooseMap( mapName )
-{
-	printt( "Selected map: " + mapName )
-
-	if ( IsMapVoteMode() )
-	{
-		ClientCommand( "StartVote " + file.voteType + " " + mapName )
-		CloseAllInGameMenus()
-		return
-	}
+	printt( mapName, mapID )
 
 	SetCoopCreateAMatchMapname( mapName )
 
@@ -484,49 +319,23 @@ function MonitorDLCAvailability()
 	}
 }
 
-// Votes can only be started when the server allows it; lock the tiles while it doesn't
-function MonitorVoteAvailability()
-{
-	EndSignal( uiGlobal.signalDummy, "OnCloseMapsMenu" )
-
-	while ( 1 )
-	{
-		local allowed = CanCreateVoteOfType( file.voteType, null )
-		if ( allowed != file.voteAllowed )
-		{
-			file.voteAllowed = allowed
-			UpdateDLCMapButtons()
-		}
-
-		wait 1.0
-	}
-}
-
-// The nine maps the Campaign missions are played on, in mission order
-function GetCampaignMaps()
-{
-	return [
-		"mp_fracture",
-		"mp_colony",
-		"mp_relic",
-		"mp_angel_city",
-		"mp_outpost_207",
-		"mp_boneyard",
-		"mp_airbase",
-		"mp_o2",
-		"mp_corporate",
-	]
-}
-
 function GetPrivateMatchMaps()
 {
-	if ( IsMapVoteMode() )
-		return GetMapVoteOptions()
-
-	// Outside a private match the picker is the Frontier Defense "create a match" list
-	local modeName = IsPrivateMatch() ? GetModeNameForEnum( level.ui.privatematch_mode ) : COOPERATIVE
+	local modeName = GetModeNameForEnum( level.ui.privatematch_mode )
 	if ( modeName == "campaign_carousel" )
-		return GetCampaignMaps()
+	{
+		return [
+			"mp_fracture",
+			"mp_colony",
+			"mp_relic",
+			"mp_angel_city",
+			"mp_outpost_207",
+			"mp_boneyard",
+			"mp_airbase",
+			"mp_o2",
+			"mp_corporate",
+		]
+	}
 
 	local allMaps = []
 	allMaps.resize( getconsttable().ePrivateMatchMaps.len() )
@@ -534,14 +343,13 @@ function GetPrivateMatchMaps()
 	foreach ( mapName, mapID in getconsttable().ePrivateMatchMaps )
 		allMaps[mapID] = mapName
 
-	// Every map is listed only in the modes it exists in (Frontier Defense has no M.I.A., Nest, Box or Certification; the converted
-	// Titanfall 2 maps only in the modes Titanfall 2 has them in). A player without a usable Titanfall 2 install still sees those maps,
-	// locked, with the reason in the tooltip (UpdateMapButtonTooltip): hiding them left people with Titanfall 2 installed no way to tell
-	// why the maps were missing.
+	// The converted Titanfall 2 maps are only listed for a player who owns the Titanfall 2 group (dlc5_enabled) and only in
+	// the modes Titanfall 2 has them in
+	local ownsTitanfall2 = LocalPlayerOwnsDLCMapGroup( R2_MAP_DLC_GROUP )
 	local mapsArray = []
 	foreach ( mapName in allMaps )
 	{
-		if ( !MapSupportsMode( mapName, modeName ) )
+		if ( IsTitanfall2Map( mapName ) && ( !ownsTitanfall2 || !MapSupportsMode( mapName, modeName ) ) )
 			continue
 
 		mapsArray.append( mapName )
@@ -567,364 +375,35 @@ function GetPrivateMatchMaps()
 	return filteredMaps
 }
 
-// Returns the grid slot of the focused map tile, or null when focus is elsewhere (scroll arrows, page buttons, footer)
-function GetFocusedSlot()
-{
-	foreach ( slot, button in file.tiles )
-	{
-		if ( button.IsFocused() )
-			return slot
-	}
-
-	return null
-}
-
-// Moves the visible window by rowDelta rows. Keeps focus on the same column when a tile is focused.
-function ScrollMapGrid( rowDelta )
-{
-	if ( uiGlobal.activeMenu != file.menu )
-		return
-
-	local newRow = clamp( file.scrollRow + rowDelta, 0, file.maxScrollRow )
-	if ( newRow == file.scrollRow )
-		return
-
-	local focusedSlot = GetFocusedSlot()
-
-	file.scrollRow = newRow
-	RefreshMapTiles()
-
-	if ( focusedSlot == null )
-		return
-
-	// The last page can have empty tiles; fall back to the last map that is still shown
-	local shownTiles = min( file.mapsArray.len() - file.scrollRow * MAP_GRID_COLUMNS, MAP_GRID_TILES )
-	local targetSlot = min( focusedSlot, shownTiles - 1 )
-	local target = file.tiles[ targetSlot ]
-
-	if ( target.IsFocused() )
-		MapButton_Focused( target ) // Same tile, new map: refresh the preview
-	else
-		target.SetFocused()
-}
-
 function OnMapListScrollUp_Activate(...)
 {
-	ScrollMapGrid( -1 )
+	if( GetModeNameForEnum( level.ui.privatematch_mode ) == "campaign_carousel" )
+		return
+
+	file.mapListScrollState--
+	if ( file.mapListScrollState < 0 )
+		file.mapListScrollState = 0
+
+	UpdateMapListScroll()
 }
 
 function OnMapListScrollDown_Activate(...)
 {
-	ScrollMapGrid( 1 )
-}
-
-function OnMapListPageUp_Activate(...)
-{
-	ScrollMapGrid( -MAP_GRID_PAGE_ROWS )
-}
-
-function OnMapListPageDown_Activate(...)
-{
-	ScrollMapGrid( MAP_GRID_PAGE_ROWS )
-}
-
-// Up on the top row / down on the bottom row scrolls the grid instead of leaving it
-function OnMapGridNavUp(...)
-{
-	local slot = GetFocusedSlot()
-	if ( slot != null && slot < MAP_GRID_COLUMNS )
-		ScrollMapGrid( -1 )
-}
-
-function OnMapGridNavDown(...)
-{
-	local slot = GetFocusedSlot()
-	if ( slot != null && slot >= MAP_GRID_TILES - MAP_GRID_COLUMNS )
-		ScrollMapGrid( 1 )
-}
-
-// Where a map comes from, if it is not a plain multiplayer map: the map packs, the Titanfall Online maps, the converted
-// Titanfall 2 maps, the maps that only exist in R1Delta, and the maps the Titanfall Campaign is played on. Returns a
-// localization token, or null.
-function GetMapPackToken( mapName )
-{
-	switch ( GetDLCMapGroupForMap( mapName ) )
-	{
-		case 1:
-			return "#MAP_PACK_1"
-		case 2:
-			return "#MAP_PACK_2"
-		case 3:
-			return "#MAP_PACK_3"
-		case R2_MAP_DLC_GROUP:
-			return "#MAP_PACK_R2"
-	}
-
-	switch ( mapName )
-	{
-		case "mp_box":
-		case "mp_nest2":
-		case "mp_mia":
-			return "#MAP_PACK_TFO"
-		case "mp_npe":
-			return "#MAP_PACK_R1DELTA"
-	}
-
-	foreach ( campaignMap in GetCampaignMaps() )
-	{
-		if ( campaignMap == mapName )
-			return "#MAP_PACK_CAMPAIGN"
-	}
-
-	return null
-}
-
-// The pack line sits between the map name and its description; the description makes room for it. Campaign missions
-// are not maps from a pack, so they never show it.
-function UpdateMapPackLine( mapName )
-{
-	local token = IsCampaignMapList() ? null : GetMapPackToken( mapName )
-
-	file.descShift = token == null ? 0 : MAP_INFO_PACK_SHIFT
-	file.packLabel.SetVisible( token != null )
-	if ( token != null )
-		file.packLabel.SetText( token )
-
-	local scale = GetContentScaleFactor( file.menu )[1]
-	file.infoDesc.SetPos( file.descBasePos[0], file.descBasePos[1] + file.descShift * scale )
-}
-
-// Long names (some Campaign missions) would be cut off at the default size, so show the largest font whose text fits.
-// The labels size themselves to their text, so their width is the true text width.
-function ApplyMapNameFit()
-{
-	local scale = GetContentScaleFactor( file.menu )[0]
-	local available = file.infoBackdrop.GetWidth() - ( MAP_INFO_TEXT_INSET + MAP_INFO_TEXT_MARGIN ) * scale
-	local chosen = file.nameLabels.len() - 1 // nothing fits: use the smallest
-	foreach ( index, label in file.nameLabels )
-	{
-		if ( label.GetWidth() <= available )
-		{
-			chosen = index
-			break
-		}
-	}
-
-	foreach ( index, label in file.nameLabels )
-		label.SetAlpha( index == chosen ? 255 : 0 )
-}
-
-// ApplyMapNameFit() already ran in the frame the name was set. A label can report its new width a few frames after SetText,
-// so wait at least three frames, then until the reading stops changing, and fit again. The title stays visible throughout.
-function FitMapName()
-{
-	EndSignal( uiGlobal.signalDummy, "OnCloseMapsMenu" )
-
-	local lastWidth = -1
-	for ( local i = 0; i < 10; i++ )
-	{
-		WaitFrame()
-		local width = file.nameLabels[0].GetWidth()
-		if ( i >= 2 && width == lastWidth )
-			break
-		lastWidth = width
-	}
-
-	ApplyMapNameFit()
-}
-
-// The description label sizes itself to its text; stretch the backdrop to match (never below its base height)
-function ResizeMapInfoBackdrop()
-{
-	EndSignal( uiGlobal.signalDummy, "OnCloseMapsMenu" )
-
-	WaitFrame() // The label is only re-measured after the text change has been laid out
-
-	local scale = GetContentScaleFactor( file.menu )[1]
-	local contentHeight = ( MAP_INFO_DESC_OFFSET + file.descShift + MAP_INFO_PADDING ) * scale + file.infoDesc.GetHeight()
-	file.infoBackdrop.SetHeight( max( MAP_INFO_MIN_HEIGHT * scale, contentHeight ) )
-}
-
-function GetMapVoteOptions()
-{
-	local playlist = GetCurrentPlaylistName()
-	local mapsArray = GetPlaylistUniqueMaps( playlist )
-
-	// The converted Titanfall 2 maps are listed by the playlists, but only a player and a server that own the Titanfall 2
-	// group can use them, and only in the modes Titanfall 2 has them in.
-	local usableMaps = []
-	foreach ( mapName in mapsArray )
-	{
-		if ( IsTitanfall2Map( mapName ) && !CanVoteForTitanfall2Map( mapName, playlist ) )
-			continue
-
-		usableMaps.append( mapName )
-	}
-	mapsArray = usableMaps
-
-	if ( playlist != CAPTURE_POINT && playlist != COOPERATIVE && playlist != CAMPAIGN )
-	{
-		mapsArray.append( "mp_mia" )
-		mapsArray.append( "mp_nest2" )
-		mapsArray.append( "mp_box" )
-		mapsArray.append( "mp_npe" )
-	}
-
-	return mapsArray
-}
-
-function CanVoteForTitanfall2Map( mapName, playlist )
-{
-	if ( !LocalPlayerOwnsDLCMapGroup( R2_MAP_DLC_GROUP ) || !ServerHasDLCMapGroupEnabled( R2_MAP_DLC_GROUP ) )
-		return false
-
-	return MapSupportsMode( mapName, playlist )
-}
-
-// Shows the wheel or the shoulder button glyphs (next to PREVIOUS PAGE / NEXT PAGE) for the active input device
-function UpdatePagingGlyphs()
-{
-	local controller = IsControllerModeActive()
-	if ( controller == file.controllerGlyphs )
+	if( GetModeNameForEnum( level.ui.privatematch_mode ) == "campaign_carousel" )
 		return
 
-	file.controllerGlyphs = controller
+	file.mapListScrollState++
+	if ( file.mapListScrollState > file.numMapButtonsOffScreen )
+		file.mapListScrollState = file.numMapButtonsOffScreen
 
-	local paged = file.maxScrollRow > 0
-	foreach ( elem in file.mouseGlyphs )
-		elem.SetVisible( paged && !controller )
-	foreach ( elem in file.padGlyphs )
-		elem.SetVisible( paged && controller )
-
-	// RANDOM MAP: a button for mouse and keyboard, a "Y  Random Map" footer-style hint for controllers (Y presses it).
-	// Neither is offered when voting for a map.
-	local randomAllowed = !IsMapVoteMode()
-	file.randomButton.SetVisible( randomAllowed && !controller )
-	file.randomHint.SetVisible( randomAllowed && controller )
-	if ( controller )
-		file.randomHint.SetText( "#MAP_RANDOM_GLYPH" ) // Glyph tokens only resolve when the text is set while a controller is active
+	UpdateMapListScroll()
 }
 
-// Controller buttons are polled rather than registered with RegisterButtonPressedCallback: gamepad buttons never reach
-// those callbacks while this menu is open (the menu consumes them), but InputIsButtonDown still sees them.
-//
-// With a controller the grid is a closed list: focus never leaves the 3x3 tiles (no arrows, page buttons or RANDOM MAP),
-// and pushing the stick or d-pad past the top or bottom row scrolls like the mouse wheel. LB / RB page.
-function MonitorControllerMode()
+function UpdateMapListScroll()
 {
-	EndSignal( uiGlobal.signalDummy, "OnCloseMapsMenu" )
+	local buttons = file.buttons
+	local basePos = buttons[0].GetBasePos()
+	local offset = buttons[0].GetHeight() * file.mapListScrollState
 
-	local pageButtons = [ BUTTON_SHOULDER_LEFT, BUTTON_SHOULDER_RIGHT, BUTTON_Y ]
-	local scrollButtons = [ BUTTON_DPAD_UP, BUTTON_DPAD_DOWN, STICK1_UP, STICK1_DOWN ] // repeat while held
-
-	local wasDown = {}
-	local nextRepeat = {}
-	foreach ( button in pageButtons )
-		wasDown[ button ] <- InputIsButtonDown( button ) // Whatever opened the menu may still be held
-	foreach ( button in scrollButtons )
-	{
-		wasDown[ button ] <- InputIsButtonDown( button )
-		nextRepeat[ button ] <- 0
-	}
-
-	local prevSlot = GetFocusedSlot()
-
-	while ( 1 )
-	{
-		UpdatePagingGlyphs()
-
-		if ( IsControllerModeActive() && uiGlobal.activeMenu == file.menu )
-		{
-			foreach ( button in pageButtons )
-			{
-				local isDown = InputIsButtonDown( button )
-				if ( isDown && !wasDown[ button ] )
-				{
-					if ( button == BUTTON_SHOULDER_LEFT )
-						OnMapListPageUp_Activate() // LB = previous page
-					else if ( button == BUTTON_SHOULDER_RIGHT )
-						OnMapListPageDown_Activate() // RB = next page
-					else if ( !IsMapVoteMode() )
-						thread RandomMapAfterYRelease() // Y = random map (not offered when voting)
-				}
-
-				wasDown[ button ] = isDown
-			}
-
-			foreach ( button in scrollButtons )
-			{
-				local isDown = InputIsButtonDown( button )
-				local fire = false
-
-				if ( isDown && !wasDown[ button ] )
-				{
-					fire = true
-					nextRepeat[ button ] = Time() + MAP_GRID_REPEAT_DELAY
-				}
-				else if ( isDown && Time() >= nextRepeat[ button ] )
-				{
-					fire = true
-					nextRepeat[ button ] = Time() + MAP_GRID_REPEAT_RATE
-				}
-
-				wasDown[ button ] = isDown
-
-				// The engine may already have moved focus this frame, so judge the edge by where focus was before the press
-				if ( fire && prevSlot != null )
-				{
-					if ( button == BUTTON_DPAD_UP || button == STICK1_UP )
-						ScrollMapGridFromSlot( -1, prevSlot )
-					else
-						ScrollMapGridFromSlot( 1, prevSlot )
-				}
-			}
-
-			KeepFocusInMapGrid()
-		}
-
-		prevSlot = GetFocusedSlot()
-		WaitFrame()
-	}
-}
-
-// Scrolls one row when the focused tile is on the edge row in the direction of travel
-function ScrollMapGridFromSlot( rowDelta, slot )
-{
-	if ( rowDelta < 0 && slot < MAP_GRID_COLUMNS )
-		ScrollMapGrid( -1 )
-	else if ( rowDelta > 0 && slot >= MAP_GRID_TILES - MAP_GRID_COLUMNS )
-		ScrollMapGrid( 1 )
-}
-
-// Puts focus back on a tile if the engine's stick navigation moved it onto the arrows, page buttons or RANDOM MAP
-function KeepFocusInMapGrid()
-{
-	if ( GetFocusedSlot() != null )
-		return
-
-	local shownTiles = min( file.mapsArray.len() - file.scrollRow * MAP_GRID_COLUMNS, MAP_GRID_TILES )
-	if ( shownTiles < 1 )
-		return
-
-	file.tiles[ min( file.focusSlot, shownTiles - 1 ) ].SetFocused()
-}
-
-
-// Y picks a random map. Choosing a map closes this menu, which fires "OnCloseMapsMenu"; any thread that registered
-// EndSignal on it is killed mid-close, before the menu underneath is reopened. So this runs in its own thread with no
-// EndSignal. It also waits for Y to be released so the lobby's own Y shortcuts don't see the same press.
-function RandomMapAfterYRelease()
-{
-	if ( file.randomPending )
-		return
-
-	file.randomPending = true
-
-	while ( InputIsButtonDown( BUTTON_Y ) )
-		WaitFrame()
-
-	file.randomPending = false
-
-	if ( uiGlobal.activeMenu == file.menu && !IsMapVoteMode() )
-		OnRandomMapButton_Activate( null )
+	buttons[0].SetPos( basePos[0], basePos[1] - offset )
 }

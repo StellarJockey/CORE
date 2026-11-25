@@ -291,8 +291,3 @@ function TripleThreat_Explode( grenade, collisionEnt = null)
 		normal = grenade.s.collisionNormal
 	grenade.Explode( normal )
 }
-
-function OnClientAnimEvent( name )
-{
-	GlobalClientEventHandler( name )
-}

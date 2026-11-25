@@ -68,11 +68,6 @@ function GlobalClientEventHandler( name )
 
 	if ( name == "ammo_full" )
 		UpdateViewmodelAmmo( true )
-
-	foreach ( callbackInfo in level.onWeaponClientEventCallbacks )
-	{
-		callbackInfo.func.acall( [callbackInfo.scope, self, name] )
-	}
 }
 
 function UpdateViewmodelAmmo( forceFull = false )
@@ -1087,7 +1082,7 @@ function WeaponCancelsCloak( weapon )
 		case "mp_weapon_laser_mine":
 		case "mp_weapon_satchel":
 		case "mp_weapon_proximity_mine":
-		case WEAPON_THROWING_KNIFE_NAME:
+		case "mp_weapon_throwing_knife":
 			return false
 		default:
 			break

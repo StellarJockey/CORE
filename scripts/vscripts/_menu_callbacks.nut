@@ -1,4 +1,4 @@
-function main()
+function main()  // FO
 {
 	IncludeScript( "_loadouts" )
 	IncludeScript( "_burncards_shared")
@@ -96,7 +96,9 @@ function ClientCommand_ActivateBurnCard(player, ...) {
 		return false
 	}
 
-	local cardRef = GetBurnCardFromSlot(player, index)
+	// Get the card reference from the player's active burn card slot
+	local cardRef = GetPlayerActiveBurnCardSlotContents( player, index )
+	local cardIndex = GetBurnCardIndexByRef(cardRef)
 	if ( cardRef == null )
 		return false
 
@@ -388,7 +390,8 @@ function ClientCommand_InGameMenuOpened( player, ... )
 
 function ClientCommand_InGameMenuClosed( player, ... )
 {
-	if ( ( "pilotLoadout" in player.s ) || ( "titanLoadout" in player.s ) )
+	// OnPlayerCloseClassMenu (respawn handling) only exists in match gametypes, and there is nothing to give in the lobby
+	if ( !IsLobby() && ( ( "pilotLoadout" in player.s ) || ( "titanLoadout" in player.s ) ) )
 	{
 		OnPlayerCloseClassMenu( player )
 

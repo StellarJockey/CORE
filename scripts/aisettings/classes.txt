@@ -3,6 +3,7 @@ classes
 	import	soldier.txt
 	import	soldier_daytime.txt
 	import	fireteam_soldier.txt
+	import	fireteam_pilot.txt
 	import 	training_sentry_soldier.txt
 	import	marvin.txt
 	import	titan.txt
@@ -16,4 +17,6 @@ classes
 	import	suicidespectre.txt
 	import	vehicle.txt
 	import	turret_shoulder.txt
+	import  gunship.txt
+	import  fireteam_captain.txt
 }

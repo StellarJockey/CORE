@@ -152,6 +152,7 @@ function RollCredits()
 
 	ClearCredits( 0 )
 
+	ScrollSingleColumnCenteredNames( "overhaulteam" )
     ScrollSingleColumnCenteredNames( "deltateam" )
 	ScrollRespawnLogo()
 	wait 4.5 // badass way to do it obviously
@@ -868,6 +869,23 @@ function InitPeople()
 	level.credits <- {}
 	level.creditsTextLookup <- {}
 
+//===========================
+// FRONTIER OVERHAUL
+//===========================
+	AddDepartment( "overhaulteam", "Frontier Overhaul Contributors" )
+    AddNameOnly( "overhaulteam", "ASillyNeko" )
+    AddNameOnly( "overhaulteam", "Frann" )
+    AddNameOnly( "overhaulteam", "07zj" )
+	AddNameOnly( "overhaulteam", "Aphelion" )
+	AddNameOnly( "overhaulteam", "NachosChipeados" )
+	AddNameOnly( "overhaulteam", "StoneCold" )
+	AddNameOnly( "overhaulteam", "Wulfheart" )
+	AddNameOnly( "overhaulteam", "sgtmajorjefferson" )
+	AddNameOnly( "overhaulteam", "Claire" )
+	AddNameOnly( "overhaulteam", "ynformal" )
+	AddNameOnly( "overhaulteam", "gearhead" )
+	AddNameOnly( "overhaulteam", "Claude (AI)" )
+
 //============================
 // DELTA!!!!!!!!!!!
 //============================
@@ -885,7 +903,7 @@ function InitPeople()
 	AddNameOnly( "deltateam", "Koutsie" )
 	AddNameOnly( "deltateam", "Akabenko" )
 	AddNameOnly( "deltateam", "dmitryalexander" )
-
+	
 //============================
 //	EXECUTIVE
 //============================

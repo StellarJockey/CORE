@@ -120,7 +120,7 @@ function GetEyeOrigin( ent )
 }
 
 //Called after pressing the melee button to recheck for targets
-function CodeCallback_IsValidMeleeExecutionTarget( attacker, target, skipNativeReachability = false )
+function CodeCallback_IsValidMeleeExecutionTarget( attacker, target )
 {
 	level.meleeHintActive = false
 
@@ -135,6 +135,9 @@ function CodeCallback_IsValidMeleeExecutionTarget( attacker, target, skipNativeR
 
 
 	if ( !IsAlive( target ) )
+		return false
+
+	if ( "isHologram" in target.s )
 		return false
 
 	if ( !CanBeMeleed( target ) )
@@ -206,7 +209,7 @@ function CodeCallback_IsValidMeleeExecutionTarget( attacker, target, skipNativeR
 
 	if ( IsMultiplayer() )
 	{
-		if ( ShouldPreventFriendlyFire( target, attacker ) )
+		if ( attacker.GetTeam() == target.GetTeam() && GAMETYPE != FFA )
 			return false
 
 		if ( IsServer() )
@@ -237,13 +240,13 @@ function CodeCallback_IsValidMeleeExecutionTarget( attacker, target, skipNativeR
 	if ( !action )
 		return false
 
-	if ( attacker.IsPlayer() )
+    if ( attacker.IsPlayer() )
 	{
-		if ( !skipNativeReachability && !PlayerMelee_IsExecutionReachable( attacker, target, 0.65 ) )
-			return false
+	    if ( !PlayerMelee_IsExecutionReachable( attacker, target, 0.65 ) )
+		    return false
 
-		if ( !ShouldPlayerExecuteTarget( attacker, target ) )
-			return false
+	    if ( !ShouldPlayerExecuteTarget( attacker, target ) )
+		    return false
 	}
 
 	level.meleeHintActive = true
@@ -267,8 +270,8 @@ function CodeCallback_IsValidMeleeAttackTarget( attacker, target )
 	if ( !CanBeMeleed( target ) )
 		return false
 
-	if ( ShouldPreventFriendlyFire( target, attacker ) )
-		return false
+	if ( attacker.GetTeam() == target.GetTeam() )
+			return false
 
 	if ( IsServer() )
 	{
@@ -320,8 +323,6 @@ function CodeCallback_OnMeleePressed_Internal( player )
 	}
 
 	local target = PlayerConeTraceResult( player, "CodeCallback_IsValidMeleeExecutionTarget" )
-	if ( target == null && IsServer() && IsFFABased() )
-		target = FFA_FindSameNativeTeamExecutionTarget( player )
 	if ( !PlayerTriesExecutionMelee( player, target ) )
 	{
 		// didn't do execution
@@ -379,59 +380,6 @@ function PlayerConeTraceResult( player, func )
 	return PlayerMelee_ConeTrace( player, range, angle, func )
 }
 
-function FFA_FindSameNativeTeamExecutionTarget( player )
-{
-	if ( !IsValid( player ) )
-		return null
-
-	local range = player.IsTitan() ? TITAN_EXECUTION_RANGE : HUMAN_EXECUTION_RANGE
-	local angle = player.IsTitan() ? TITAN_EXECUTION_ANGLE : HUMAN_EXECUTION_ANGLE
-	local rangeSqr = range * range
-	local minDot = deg_cos( angle )
-	local eyeOrigin = player.EyePosition()
-	local viewVector = player.GetViewVector()
-	local bestTarget = null
-	local bestDistanceSqr = null
-
-	foreach ( target in GetPlayerArray() )
-	{
-		if ( !IsValid( target ) || target == player )
-			continue
-
-		if ( target.GetTeam() != player.GetTeam() )
-			continue
-
-		if ( ShouldPreventFriendlyFire( target, player ) )
-			continue
-
-		local targetEye = target.EyePosition()
-		local toTarget = targetEye - eyeOrigin
-		local distanceSqr = toTarget.LengthSqr()
-		if ( distanceSqr > rangeSqr )
-			continue
-
-		toTarget.Normalize()
-		if ( viewVector.Dot( toTarget ) < minDot )
-			continue
-
-		local ignoredEntities = [ player, target ]
-		local traceResult = TraceLineHighDetail( eyeOrigin, targetEye, ignoredEntities, (TRACE_MASK_PLAYERSOLID_BRUSHONLY | TRACE_MASK_BLOCKLOS), TRACE_COLLISION_GROUP_NONE )
-		if ( traceResult.fraction < 1 )
-			continue
-
-		if ( !CodeCallback_IsValidMeleeExecutionTarget( player, target, true ) )
-			continue
-
-		if ( bestDistanceSqr == null || distanceSqr < bestDistanceSqr )
-		{
-			bestTarget = target
-			bestDistanceSqr = distanceSqr
-		}
-	}
-
-	return bestTarget
-}
-
 function ShouldHolsterWeaponForMelee( player )
 {
 	if ( !IsServer() )
@@ -475,7 +423,7 @@ function PlayerTriesExecutionMelee( player, target )
 			player.PlayerMelee_SetState( PLAYER_MELEE_STATE_TITAN_EXECUTION_PREDICTED )
 		}
 	}
-	else if ( player.IsPlayer() )
+	else if( player.IsPlayer() )
 	{
 		if ( IsServer() )
 		{
@@ -796,10 +744,8 @@ function HumanNonSyncedMelee( player )
 	{
 		EmitDifferentSoundsOnEntityForPlayerAndWorld( melee1pSound, melee3pSound, player, player )
 		player.Anim_PlayGesture( attackerAnimGesture3p )
-
 		player.Weapon_StartCustomActivity( attackerAnim1p, false )
 	}
-
 	// Moved above because client doesnt know custom melee anims (ACT_VM_ONEHANDED_MELEE_ATTACK1) exist
 	//player.Weapon_StartCustomActivity( attackerAnim1p, false )
 }
@@ -966,7 +912,7 @@ function SetObjectCanBeMeleed(ent, value)
 
 function CodeCallback_OnMeleeKilled( target )
 {
-	if ( !IsAlive( target ) )
+	if ( !IsValid( target ) || !IsAlive( target ) )
 		return
 
 	target.ClearInvulnerable()

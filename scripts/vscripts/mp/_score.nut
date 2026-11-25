@@ -11,6 +11,7 @@ function main()
 {
 	FlagInit( "firstStrikeGiven" )
 	Globalize( AddPlayerScore )
+	Globalize( AddCombatDroneKillScore )
 	Globalize( AddTeamScore )
 	Globalize( ScoreEvent_TitanKilled )
 	Globalize( ScoreEvent_PlayerKilled )
@@ -47,47 +48,6 @@ function SetGameModeScoreEventOverrideFunc( func )
 }
 Globalize ( SetGameModeScoreEventOverrideFunc )
 
-/*
-// iskyfish.2016.10.31, setting 값으로만 동작하게 해봅니다!
-function AddPlayerScore( player, scoreEvent, targetEnt = null, pointValueOverride = null )
-{
-	if ( !IsValid_ThisFrame( player ) || !player.IsPlayer() )
-		return
-
-	if ( !player.hasConnected )
-		return
-
-	if ( IsTrainingLevel() )
-		return
-
-	local event = ScoreEventFromName( scoreEvent )
-
-	if ( level.onScoreEventFunc != null )
-		level.onScoreEventFunc.func.acall( [ level.onScoreEventFunc.scope, player, event ] )
-
-	local eventType = event.GetType()
-	local pointValue = event.GetPointValue()
-
-
-	pointValue = floor( pointValue )
-
-	if ( pointValue <=0 ) return
-
-	player.SetScore( player.GetScore() + pointValue )
-
-	if ( eventType == scoreEventType.ASSAULT )
-		player.SetAssaultScore( player.GetAssaultScore() + pointValue )
-	else if ( eventType == scoreEventType.DEFENSE )
-		player.SetDefenseScore( player.GetDefenseScore() + pointValue )
-
-	AddTitanBuildPoint( player, scoreEvent )
-
-	// display score splash message
-	local multiple = 1.0
-	ShowPlayerScoreEvent( player, event, targetEnt, pointValueOverride, multiple )
-	if ( event.HasConversation() )
-		thread PlayPrioritisedConversation( event, player )
-}*/
 
 // iskyfish.2016.10.31, backup
 function AddPlayerScore( player, scoreEvent, targetEnt = null, pointValueOverride = null )
@@ -155,6 +115,66 @@ function AddPlayerScore( player, scoreEvent, targetEnt = null, pointValueOverrid
 }
 
 
+// Combat drones are awarded from SearchShip_TookDamage (cinematic_mp/_cinematic_mp_server.nut).
+// The attacker is already known to be on the enemy team.
+function AddCombatDroneKillScore( killer )
+{
+	if ( !IsValid( killer ) )
+		return
+
+	local isPlayer = killer.IsPlayer()
+
+	if ( GameRules.GetGameMode() == ATTRITION && GetGameState() == eGameState.Playing )
+	{
+		local scoreVal = ATTRITION_SCORE_DRONE
+
+		// splash first so the kill ends up above it
+		if ( isPlayer )
+			ShowPlayerAttritionScoreEvent( killer, scoreVal )
+		else
+		{
+			local boss = killer.GetBossPlayer()
+			if ( IsValid( boss ) )
+				ShowPlayerAttritionScoreEvent( boss, scoreVal )
+		}
+
+		GameScore.AddTeamScore( killer.GetTeam(), scoreVal )
+
+		if ( isPlayer )
+			killer.SetAssaultScore( killer.GetAssaultScore() + scoreVal )
+	}
+
+	if ( isPlayer )
+		AddPlayerScore( killer, "KillCombatDrone" )
+}
+
+function GenericNPCPilotKillScore( player, titan = null )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	if ( GameRules.GetGameMode() == COOPERATIVE )
+		return
+
+	if ( GetConVarBool( "delta_play_killsounds" ) )
+		EmitSoundOnEntityOnlyToPlayer( player, player, "Pilot_Killed_Indicator" )
+
+	AddPlayerScore( player, "KillReskinnedPilot", titan )
+}
+Globalize( GenericNPCPilotKillScore )
+
+function GenericCaptainKillScore( player, titan = null )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	if ( GameRules.GetGameMode() == COOPERATIVE )
+		return
+
+	AddPlayerScore( player, "KillCaptain", titan )
+}
+Globalize( GenericCaptainKillScore )
+
 function GetPlayerXPMultiple( player, targetEnt )
 {
 	local multiplier = null
@@ -168,15 +188,26 @@ function GetPlayerXPMultiple( player, targetEnt )
 	if ( targetEnt.IsTitan() && PlayerHasServerFlag( player, SFLAG_HUNTER_TITAN ) )
 		return 2.5
 
-	if ( targetEnt.IsSoldier() && PlayerHasServerFlag( player, SFLAG_HUNTER_GRUNT ) )
-		return 2.5
+	if ( PlayerHasServerFlag( player, SFLAG_HUNTER_GRUNT ) )
+	{
+		if (  targetEnt.IsSoldier() && !IsReskinnedPilot( targetEnt ) && !IsGhostPilot( targetEnt ) )
+			return 2.5
+
+		else if ( IsValid( targetEnt ) && "s" in targetEnt )
+		{
+			if ( IsGruntCaptain( targetEnt ) )
+				return 2.5
+		}
+	}
 
 	if ( targetEnt.IsSpectre() && PlayerHasServerFlag( player, SFLAG_HUNTER_SPECTRE ) )
 		return 2.5
 
-	if ( targetEnt.IsPlayer() && PlayerHasServerFlag( player, SFLAG_HUNTER_PILOT ) )
-		return 2.5
-
+	if ( PlayerHasServerFlag( player, SFLAG_HUNTER_PILOT ) )
+	{
+		if ( targetEnt.IsPlayer() || IsReskinnedPilot( targetEnt ) || IsGhostPilot( targetEnt ) )
+			return 2.5
+	}
 	return multiplier
 }
 
@@ -246,14 +277,12 @@ function ScoreEvent_TitanKilled( titan, attacker, inflictor, damageSourceId, wea
 			return	// couldn't find a player to give the score to so we early out.
 	}
 
-
 	if ( ShouldPreventFriendlyFire( titan, attacker ) )
-		return
+		return false
 
 	if ( player.IsPlayer())
 		player.SetTitanKillCount( player.GetTitanKillCount() + 1 )
 	AddTitanBuildPoint( player, "TitanKilled" )
-
 
 	titan.GetTitanSoul()
 
@@ -282,42 +311,80 @@ function ScoreEvent_TitanKilled( titan, attacker, inflictor, damageSourceId, wea
 
 	if ( attacker.IsPlayer() && !attacker.IsTitan() )
 	{
-		local settings = titan.GetPlayerSettings()
-
-		switch ( settings )
+		// Check if victim is an NPC Titan
+		if ( titan.IsNPC() )
 		{
-			case "titan_stryder":
-				scoreEvent = "KillStryder"
-				break
+			// Handle NPC Titan kill
+			scoreEvent = "KillTitan"  // Generic score event for any NPC Titan
+			if ( !IsTitanEliminationBased() )
+				AddPlayerScore( player, scoreEvent, titan )
 
-			//case "titan_slammer":
-			//	scoreEvent = "KillSlammer"
-			//	break
+			local settings = titan.GetPlayerSettings()
+			local scriptName = GetPlayerSettingsFieldForClassName( settings, "scriptName" )
 
-			case "titan_atlas":
-				scoreEvent = "KillAtlas"
-				break
+			if (!scriptName)
+				return
 
-			case "titan_ogre":
-				scoreEvent = "KillOgre"
-				break
+			switch ( settings )
+			{
+				case "titan_stryder":
+					scoreEvent = "KillStryder"
+					break
+
+				case "titan_atlas":
+					scoreEvent = "KillAtlas"
+					break
+
+				case "titan_ogre":
+					scoreEvent = "KillOgre"
+					break
+			}
 		}
-
-		if ( GAMETYPE == COOPERATIVE )
+		else
 		{
-			if ( IsNukeTitan( titan ) )
-				scoreEvent = "Killed_Nuke_Titan"
-			else if ( IsMortarTitan( titan ) )
-				scoreEvent = "Killed_Mortar_Titan"
-			else if ( IsEMPTitan( titan ) )
-				scoreEvent = "Killed_EMP_Titan"
+			local settings = titan.GetPlayerSettings()
+			local scriptName = GetPlayerSettingsFieldForClassName( settings, "scriptName" )
+
+			if (!scriptName)
+				return
+
+			scoreEvent = "Kill" + scriptName
+
+			switch ( settings )
+			{
+				case "titan_stryder":
+					scoreEvent = "KillStryder"
+					break
+
+				//case "titan_slammer":
+				//	scoreEvent = "KillSlammer"
+				//	break
+
+				case "titan_atlas":
+					scoreEvent = "KillAtlas"
+					break
+
+				case "titan_ogre":
+					scoreEvent = "KillOgre"
+					break
+			}
+
+			if ( GAMETYPE == COOPERATIVE )
+			{
+				if ( IsNukeTitan( titan ) )
+					scoreEvent = "Killed_Nuke_Titan"
+				else if ( IsMortarTitan( titan ) )
+					scoreEvent = "Killed_Mortar_Titan"
+				else if ( IsEMPTitan( titan ) )
+					scoreEvent = "Killed_EMP_Titan"
+			}
+
+			if ( !scoreEvent )
+				return
+
+			if ( !IsTitanEliminationBased() )
+				AddPlayerScore( player, scoreEvent, titan )
 		}
-
-		if ( !scoreEvent )
-			return
-
-		if ( !IsTitanEliminationBased() )
-			AddPlayerScore( player, scoreEvent, titan )
 	}
 	else
 	{
@@ -363,9 +430,8 @@ function ScoreEvent_PlayerKilled( player, attacker, damageInfo )
 
 	ScoreCheck_InitStats( attacker )
 	ScoreCheck_InitStats( player )
-
 	player.s.lastKiller = attacker
-
+	
 	if ( ShouldPreventFriendlyFire( player, attacker ) )
 	{
 		//Preventing streaks from continuing after suicides.
@@ -493,28 +559,61 @@ function ScoreEvent_NPCKilled( npc, attacker, damageInfo )
 	Assert( attacker.IsPlayer() )
 	Assert( npc.IsNPC() )
 
+	if ( "isPilotProp" in npc.s || "isCaptainProp" in npc.s )
+      return
+
 	ScoreCheck_InitStats( attacker )
 	ScoreCheck_InitStats( npc )
 
 	if ( ShouldPreventFriendlyFire( npc, attacker ) )
 		return false
 
-	if ( npc.IsMarvin() )
+	if ( npc.IsMarvin() || "isHologram" in npc.s )
 		return
 
+	if ( ( IsReskinnedPilot( npc ) || IsGhostPilot( npc ) ) && GetConVarBool( "delta_play_killsounds" ) )
+	{
+		if ( attacker.IsPlayer() )
+			EmitSoundOnEntityOnlyToPlayer( attacker, attacker, "Pilot_Killed_Indicator" )
+	}
+		
 	local scoreEvent = ScoreEventForNPCKilled(npc, damageInfo)
 
 	AddPlayerScore( attacker, scoreEvent, npc )
 
 	if ( IsValidHeadShot( damageInfo, npc ) )
-		AddPlayerScore( attacker, "NPCHeadshot", npc )
+	{
+		if ( IsReskinnedPilot( npc ) || IsGhostPilot( npc ) )
+			AddPlayerScore( attacker, "Headshot", npc )
+		else 
+			AddPlayerScore( attacker, "NPCHeadshot", npc )
+	}
+
+	AwardStealthBonus( npc, damageInfo ) // Added Stealth Bonus
 
 	ScoreCheck_DroppodKill( attacker, damageInfo )
 
+	// Pilot Beatdown for NPC Pilots, checks for burn cards to give red text
 	if ( damageInfo.GetDamageSourceIdentifier() == eDamageSourceId.titan_melee )
-		AddPlayerScore( attacker, "TitanMelee_VsHumanSizedNPC", npc )
+	{
+		if ( IsReskinnedPilot( npc ) || IsGhostPilot( npc ) )
+		{
+			if ( PlayerHasServerFlag( attacker, SFLAG_DOUBLE_XP ) || PlayerHasServerFlag( attacker, SFLAG_HUNTER_PILOT ) )
+				AddPlayerScore( attacker, "BurnTitanMeleeVsReskinnedPilot", npc )
+			else
+				AddPlayerScore( attacker, "TitanMelee_VsHumanPilot", npc )
+		}
+		else
+			AddPlayerScore( attacker, "TitanMelee_VsHumanSizedNPC", npc )
+	}
 
 	ScoreCheck_Kill( attacker, npc )
+
+	// Award bonus for killing a rodeo-ing spectre
+	if ( npc.IsSpectre() && SavedFromRodeoSpectre( npc, attacker ) )
+	{
+		AddPlayerScore( attacker, "SavedFromRodeo_Spectre", npc )
+	}
 
 	if ( "recentDamageHistory" in npc.s )
 		ScoreEvent_KillAssists( npc, attacker, scoreEvent )
@@ -561,13 +660,13 @@ function ScoreCheck_Kill( attacker, killed )
 	// Check for various score bonuses for killing players
 	if ( IsPlayer( killed ) )
 	{
-		ScoreCheck_FirstStrike( attacker, killed )
 		ScoreCheck_KillingSpree( attacker, killed )
 		ScoreCheck_Comeback( attacker )
 		ScoreCheck_VictoryKill( attacker, killed )
 		ScoreCheck_Nemesis( attacker, killed )
 		ScoreCheck_SpotAssist( attacker, killed, currentTime )
 		ScoreCheck_Revenge( attacker, killed, currentTime )
+		ScoreCheck_FirstStrike( attacker, killed )
 		ScoreCheck_KilledMVP( attacker, killed )
 	}
 
@@ -662,7 +761,7 @@ function ScoreCheck_MultiKill( attacker, killed, currentTime )
 	}
 
 //Creating two lists, one with just pilots and one with grunts and pilots.
-	if ( IsPlayer( killed ) )
+	if ( IsPlayer( killed ) || IsReskinnedPilot( killed ) || IsGhostPilot( killed ) )
 	{
 		attacker.s.recentPlayerKilledTimes.append( currentTime )
 		AddRecentAllKilledTime( attacker, currentTime )
@@ -979,3 +1078,234 @@ function _GetWeaponNameFromDamageInfo( damageInfo )
 	return null
 }
 Globalize( _GetWeaponNameFromDamageInfo )
+
+
+//// STEALTH BONUS: + 20 XP if weapon is silenced AND enemy didn't see you
+
+function AwardStealthBonus( entity, damageInfo )
+{
+	local attacker = GetAttackerOrLastAttacker( entity, damageInfo )
+	attacker = GetAttackerPlayerOrBossPlayer( attacker )
+
+	if ( !IsValid( attacker ) || !attacker.IsPlayer() || attacker.IsTitan() ||
+			entity.IsTitan() || entity.IsDropship() || entity.IsMarvin() )
+		return
+
+	local weaponFromDI = damageInfo.GetWeapon()
+	local inf = damageInfo.GetInflictor()
+	local hasSilencer = false
+
+	if ( IsValid( weaponFromDI ) ) // Case A: direct weapon entity caused the damage
+	{
+		foreach ( m in weaponFromDI.GetMods() )
+		{
+			if ( m == "silencer" )
+			{
+				hasSilencer = true
+				break
+			}
+		}
+	}
+	else if ( IsValid( inf ) && inf.IsProjectile() ) // Case B: projectile spawned by a weapon
+	{
+		foreach ( m in inf.GetMods() )
+		{
+			if ( m == "silencer" )
+			{
+				hasSilencer = true
+				break
+			}
+		}
+	}
+
+	local damageSourceId = damageInfo.GetDamageSourceIdentifier()
+	if ( damageSourceId == eDamageSourceId.mp_weapon_throwing_knife ) // Knife counts as stealth
+	{
+		hasSilencer = true
+	}
+
+	if ( damageSourceId == eDamageSourceId.mp_weapon_bow ) // Bow counts as stealth
+	{
+		hasSilencer = true
+	}
+	
+	local weapon = attacker.GetActiveWeapon() // Knife melee counts as stealth
+	if ( damageSourceId == eDamageSourceId.human_melee && IsValid( weapon ) && weapon.GetClassname() == "mp_weapon_throwing_knife" )
+	{
+		hasSilencer = true
+	}
+	
+	// Only award if the actual damage-causing entity had a silencer AND victim could NOT see the attacker
+	if ( !hasSilencer || entity.CanSee( attacker ) )
+		return
+
+	local baseXP
+	if ( entity.IsPlayer() || IsReskinnedPilot( entity ) || IsGhostPilot( entity ) || IsGruntCaptain( entity) )
+		baseXP = 30.0
+	else
+		baseXP = 20.0
+
+	local scoreEventName = "StealthBonus"
+	local matches = false
+	local multiplier = 1.0
+
+	if ( PlayerHasServerFlag( attacker, SFLAG_HUNTER_GRUNT ) )
+	{
+		// human AI infantry (not pilots)
+		if ( entity.GetAIClass() == "human" && !IsReskinnedPilot( entity ) && !IsGhostPilot( entity ) )
+		{
+			matches = true
+			multiplier *= 2.5
+		}
+	}
+	if ( PlayerHasServerFlag( attacker, SFLAG_HUNTER_SPECTRE ) )
+	{
+		if ( entity.GetClassname() == "npc_spectre" )
+		{
+			matches = true
+			multiplier *= 2.5
+		}
+	}
+	if ( PlayerHasServerFlag( attacker, SFLAG_HUNTER_PILOT ) )
+	{
+		if ( IsReskinnedPilot( entity ) || IsGhostPilot( entity ) || entity.IsPlayer() )
+		{
+			matches = true
+			multiplier *= 2.5
+		}
+	}
+	if ( PlayerHasServerFlag( attacker, SFLAG_DOUBLE_XP ) )
+	{
+		matches = true
+		multiplier *= 2.0
+	}
+
+	if ( matches )
+	{
+		baseXP *= multiplier
+		if ( "StealthBonus_Burncard" in level.scoreEventsByName )
+			scoreEventName = "StealthBonus_Burncard"
+	}
+	
+	AddXP( baseXP, attacker )
+
+	if ( scoreEventName in level.scoreEventsByName )
+	{
+		local ev = level.scoreEventsByName[ scoreEventName ]
+		local scoreEventInt = ev.GetInt()
+		Remote.CallFunction_NonReplay( attacker, "ServerCallback_PointSplash", scoreEventInt, null, baseXP )
+	}
+	else if ( "LeechPanel" in level.scoreEventsByName )
+	{
+		local ev = level.scoreEventsByName["LeechPanel"]
+		local scoreEventInt = ev.GetInt()
+		Remote.CallFunction_NonReplay( attacker, "ServerCallback_PointSplash", scoreEventInt, null, baseXP )
+	}
+}
+Globalize( AwardStealthBonus )
+
+
+function AwardPilotTermination( attacker, titan, hadPilot = null, isCaptain = null, awardAttrition = false )
+{
+	if ( !IsValid_ThisFrame( attacker ) )
+		return
+
+	// FIRST: Does this Titan have an NPC Pilot?
+	if ( hadPilot == null )
+	{
+		hadPilot = false
+
+		if ( IsValid( titan ) && titan.IsTitan() )
+		{
+			if ( typeof( TitanHasPilotInTitan ) == "function" )
+				hadPilot = TitanHasPilotInTitan( titan )   // preferred path
+			else if ( "pilotedtitans" in file )
+				hadPilot = ( titan in file.pilotedtitans ) // fallback
+		}
+	}
+
+	if ( !hadPilot )
+		return
+
+	// ELSE: Does this Titan have a Grunt Captain?
+	if ( isCaptain == null )
+	{
+		isCaptain = false
+
+		if ( IsValid( titan ) && "pilotIsNPCCaptain" in titan.s )
+			isCaptain = titan.s.pilotIsNPCCaptain
+	}
+
+	// Only credit the pilot kill once the Titan is actually dead (skips interrupted executions)
+	if ( awardAttrition && GameRules.GetGameMode() == ATTRITION && ( !IsValid( titan ) || !IsAlive( titan ) ) )
+		Attrition_AwardPilotTermination( attacker, titan, isCaptain )
+
+	// Everything below is player-only (XP, score events, kill sound)
+	if ( !attacker.IsPlayer() )
+		return
+		
+	if ( isCaptain )
+	{
+		local eventName = "TerminationVsCaptain"
+
+		if ( PlayerHasServerFlag( attacker, SFLAG_HUNTER_GRUNT ) || PlayerHasServerFlag( attacker, SFLAG_DOUBLE_XP ) )
+			eventName = "BurnTerminationVsCaptain"
+
+		local titanParam = IsValid( titan ) ? titan : null
+		AddPlayerScore( attacker, eventName, titanParam )
+	}
+	else
+	{
+		local eventName = "TerminationVsReskinnedPilot"
+
+		if ( PlayerHasServerFlag( attacker, SFLAG_HUNTER_PILOT ) || PlayerHasServerFlag( attacker, SFLAG_DOUBLE_XP ) )
+			eventName = "BurnTerminationVsReskinnedPilot"
+
+		local titanParam = IsValid( titan ) ? titan : null
+		AddPlayerScore( attacker, eventName, titanParam )
+
+		if ( GetConVarBool( "delta_play_killsounds" ) && attacker.IsPlayer() )
+			EmitSoundOnEntityOnlyToPlayer( attacker, attacker, "Pilot_Killed_Indicator" )
+	}
+}
+Globalize( AwardPilotTermination )
+
+// Called when the Pilot prop of an Atlas execution dies. The prop is valid and carries the Pilot's name,
+// unlike the Titan, which has already fallen and been destroyed by this point.
+function PilotPropTerminated( attacker, prop )
+{
+	if ( "pilotTerminationPaid" in prop.s )
+		return
+
+	prop.s.pilotTerminationPaid <- true
+
+	local isCaptain = ( "pilotPropIsCaptain" in prop.s ) ? prop.s.pilotPropIsCaptain : false
+	AwardPilotTermination( attacker, prop, true, isCaptain, false )	// Attrition +4 already comes from the prop kill
+}
+Globalize( PilotPropTerminated )
+
+
+function SavedFromRodeoSpectre( spectreEntity, attacker )
+{
+	if ( !IsValid( spectreEntity ) || !IsValid( attacker ) )
+		return false
+
+	// A rodeoing spectre is parented to the titan it's riding
+	local titan = spectreEntity.GetParent()
+	if ( !IsValid( titan ) || !titan.IsTitan() || !IsAlive( titan ) )
+		return false
+
+	// No bonus for killing a spectre riding the attacker's own titan
+	if ( titan == attacker )
+		return false
+
+	if ( attacker.IsPlayer() )
+	{
+		local petTitan = attacker.GetPetTitan()
+		if ( IsAlive( petTitan ) && titan == petTitan )
+			return false
+	}
+
+	return true
+}
+Globalize( SavedFromRodeoSpectre )

@@ -15,6 +15,8 @@ WeaponData
 	"fast_swap_to"									"1"
 	"minimap_reveal_distance"						"32000"
 
+	"hud_icon"										"HUD/dpad_RE45"
+
 	// Menu Stats
 	"stat_damage" 									"25"
 	"stat_range"  									"35"
@@ -29,7 +31,8 @@ WeaponData
 
 	// Effects
 	"tracer_effect"   								"weapon_tracers_pistol"
-	//"tracer_effect_first_person"  					"weapon_tracers_pistol"
+	"tracer_effect_first_person"  					"weapon_tracers_pistol"
+	"impact_effect_table" 							"inc_bullet"
 	"vortex_absorb_effect"							"wpn_vortex_projectile_rifle_FP"
 	"vortex_absorb_effect_third_person"				"wpn_vortex_projectile_rifle"
 	"vortex_absorb_sound"							"Vortex_Shield_AbsorbBulletSmall"
@@ -48,8 +51,8 @@ WeaponData
 	"fx_muzzle_flash_attach"						"muzzle_flash"
 
 	// Sound
-	"fire_sound_1_player_1p"							"Weapon_bulletCasings.Bounce"
-	"fire_sound_1_player_3p"							"Weapon_bulletCasings.Bounce"
+	"fire_sound_1_player_1p"						"Weapon_bulletCasings.Bounce"
+	"fire_sound_1_player_3p"						"Weapon_bulletCasings.Bounce"
 	"fire_sound_2"									"Weapon_RE45Auto_Fire"
 	"looping_sounds"								"1"
 
@@ -60,8 +63,8 @@ WeaponData
 	"damage_type" 									"bullet"
 	"damage_near_distance"							"1050"  // match to search distance and red crosshair range
 	"damage_far_distance" 							"1300"
-	"damage_near_value"   							"38"
-	"damage_far_value"								"30"
+	"damage_near_value"   							"42" // "38"
+	"damage_far_value"								"34" // "30"
 	"damage_near_value_titanarmor"					"20"
 	"damage_far_value_titanarmor" 					"10"
 	"damage_rodeo" 									"110"
@@ -190,24 +193,33 @@ WeaponData
 	"bob_yaw" 										"1"
 	"bob_roll"										"-0.75"
 
-	// View Drift
-	"viewdrift_hipfire_stand_scale_pitch" 			"0.325"
-	"viewdrift_hipfire_crouch_scale_pitch"			"0.275"
-	"viewdrift_hipfire_air_scale_pitch"   			"0.5"
-	"viewdrift_hipfire_stand_scale_yaw"   			"0.12"
-	"viewdrift_hipfire_crouch_scale_yaw"  			"0.10"
-	"viewdrift_hipfire_air_scale_yaw" 				"0.22"
-	"viewdrift_hipfire_speed_pitch"   				"0.6"
-	"viewdrift_hipfire_speed_yaw" 					"1.22"
+	// Bob_Zoomed
+	"bob_cycle_time_zoomed"  						"0.45"
+	"bob_vert_dist_zoomed"   						"0.01"
+	"bob_horz_dist_zoomed"   						"0.01"
+	"bob_max_speed_zoomed"   						"150"
+	//"bob_pitch_zoomed"   							"0.002"
+	//"bob_yaw_zoomed" 								"-.002"
+	//"bob_roll_zoomed"								".002"
 
-	"viewdrift_ads_stand_scale_pitch" 				"0.3"
-	"viewdrift_ads_crouch_scale_pitch"				"0.3"
-	"viewdrift_ads_air_scale_pitch"   				"0.3"
-	"viewdrift_ads_stand_scale_yaw"   				"0.2"
-	"viewdrift_ads_crouch_scale_yaw"  				"0.2"
-	"viewdrift_ads_air_scale_yaw" 					"0.2"
-	"viewdrift_ads_speed_pitch"   					"0.6"
-	"viewdrift_ads_speed_yaw" 						"1.22"
+	// View Drift
+	"viewdrift_hipfire_stand_scale_pitch" 			"0.0" // "0.325"
+	"viewdrift_hipfire_crouch_scale_pitch"			"0.0" // "0.275"
+	"viewdrift_hipfire_air_scale_pitch"   			"0.0" // "0.5"
+	"viewdrift_hipfire_stand_scale_yaw"   			"0.0" // "0.12"
+	"viewdrift_hipfire_crouch_scale_yaw"  			"0.0" // "0.10"
+	"viewdrift_hipfire_air_scale_yaw" 				"0.0" // "0.22"
+	"viewdrift_hipfire_speed_pitch"   				"0.0" // "0.6"
+	"viewdrift_hipfire_speed_yaw" 					"0.0" // "1.22"
+
+	"viewdrift_ads_stand_scale_pitch" 				"0.0" // "0.3"
+	"viewdrift_ads_crouch_scale_pitch"				"0.0" // "0.3"
+	"viewdrift_ads_air_scale_pitch"   				"0.0" // "0.3"
+	"viewdrift_ads_stand_scale_yaw"   				"0.0" // "0.2"
+	"viewdrift_ads_crouch_scale_yaw"  				"0.0" // "0.2"
+	"viewdrift_ads_air_scale_yaw" 					"0.0" // "0.2"
+	"viewdrift_ads_speed_pitch"   					"0.0" // "0.6"
+	"viewdrift_ads_speed_yaw" 						"0.0" // "1.22"
 
 	// Rumble
 	"fire_rumble"									"pilot_autoshot_weak_fire"
@@ -281,6 +293,7 @@ WeaponData
 	"npc_max_burst"   								"5"
 	"rest_time_between_bursts_min"					"0.2"
 	"rest_time_between_bursts_max"					"0.3"
+	"npc_vortex_block"								"1"
 
 	// WeaponED Unhandled Key/Values and custom script Key/Values
 	"sprintcycle_time"								"0.55"
@@ -326,8 +339,10 @@ WeaponData
 		{
 			"fire_sound_2"						"" //Weapon_SmartPistol.SuppressedFire_Layer1
 			"bodygroup1_set"					"1"
-			"damage_near_value"   				"25"
-			"damage_far_value"					"15" //Keeping the same because it's so low already.
+			"damage_near_value"   				"35" // "25"
+			"damage_far_value"					"30" // "25" Keeping the same because it's so low already.
+			"damage_near_distance"				"*0.9"
+			"damage_far_distance"				"*0.9"
 			//"rumble"  						"4"
 			"tracer_effect"   					"weapon_tracers_pistol"
 			"minimap_reveal_distance"			"1"
@@ -358,8 +373,10 @@ WeaponData
 			"burst_fire_sound_end"							"Weapon_RE45Auto_Fire"
 			"fire_rate"   					"20"
 			"burst_fire_count"				"5"
-			"burst_fire_delay"				"0.28"
-			"viewkick_pitch_hardScale"		"1.2"
+			"burst_fire_delay"				"0.22" // "0.28"
+			"viewkick_pitch_hardScale"		"1.1" // "1.2"
+
+			"ammo_clip_size"				"25"
 
 			"viewkick_pitch_base" 							"-0.4"
 			"viewkick_pitch_random"   						"-0.25"
@@ -397,8 +414,8 @@ WeaponData
 		burn_mod_autopistol
 		{
 			"crosshair_index"								"1"
-			"damage_near_value"   							"45"
-			"damage_far_value"								"35"
+			"damage_near_value"   							"52" // "45"
+			"damage_far_value"								"44" // "35"
 			"is_burn_mod"		"1"
 		}
 	}

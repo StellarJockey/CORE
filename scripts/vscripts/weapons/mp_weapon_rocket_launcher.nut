@@ -9,8 +9,9 @@ function HasGuidedMissileMod( weapon )
 {
 	// A weapon whose mod definitions were not populated (e.g. spawned without
 	// a loadout) throws from the native HasMod; an unknown mod is not equipped.
-	try { return weapon.HasMod( "guided_missile" ) } catch ( ex ) { return false }
+	try { return weapon.HasMod( "guided_missile_0" ) } catch ( ex ) { return false }
 }
+
 
 function main()
 {
@@ -61,7 +62,7 @@ function MissileThink( weapon, missile )
 
 function OnWeaponActivate( activateParams )
 {
-	local hasGuidedMissiles = HasGuidedMissileMod( self )
+	local hasGuidedMissiles = HasGuidedMissileMod( self ) // guided_missile
 
 	if ( !hasGuidedMissiles )
 	{
@@ -145,10 +146,10 @@ function OnWeaponPrimaryAttack( attackParams )
 			return 1
 
 		local speed = 1200
-		if ( self.HasMod("titanhammer") )
-			speed = 800
+		// if ( self.HasMod("titanhammer") )
+			// speed = 800
 
-		if ( HasGuidedMissileMod( self ) )
+		if ( self.HasMod( "guided_missile_0" ) )
 			SmartWeaponFireSound(self, null)
 		//	self.EmitWeaponSound( weaponSounds["fire"] )
 
@@ -517,9 +518,4 @@ function SmartWeaponFireSound( weapon, target )
 	{
 		weapon.EmitWeaponSound( "Weapon_Archer.Fire" )
 	}
-}
-
-function OnClientAnimEvent( name )
-{
-	GlobalClientEventHandler( name )
 }

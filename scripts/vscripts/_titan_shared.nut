@@ -1,5 +1,5 @@
 TITAN_EJECT_SCREECH	<- "titan_eject_screech"
-TITAN_DECAY_LIMIT	<- 0.35 // should be the same as the frac that flames start.
+TITAN_DECAY_LIMIT	<- 0.35 // should be the same as the frac that flames start. // fo
 
 const TITAN_NUCLEAR_CORE_FX_3P = "P_xo_exp_nuke_3P"
 const TITAN_NUCLEAR_CORE_FX_1P = "P_xo_exp_nuke_1P"
@@ -365,7 +365,7 @@ function CreateShoulderTurret( turretModel )
 	npc_turret_sentry.kv.model = turretModel
 	npc_turret_sentry.kv.solid = 8 // 0 = no collision, 2 = bounding box, 6 = use vPhysics, 8 = hitboxes only
 	npc_turret_sentry.kv.additionalequipment = "mp_weapon_yh803_bullet"
-	npc_turret_sentry.kv.AccuracyMultiplier = 1.0
+	npc_turret_sentry.kv.AccuracyMultiplier = 3.0
 	npc_turret_sentry.kv.WeaponProficiency = 4
 	npc_turret_sentry.kv.fadedist = -1
 	npc_turret_sentry.s.skipTurretFX <- true

@@ -7,6 +7,9 @@ function OnWeaponPrimaryAttack( attackParams )
 	Assert( IsValid( ownerPlayer) && ownerPlayer.IsPlayer() )
 	Assert( ownerPlayer.IsTitan() )
 
+	self.EmitWeaponNpcSound( LOUD_WEAPON_AI_SOUND_RADIUS_MP, 0.2 )
+	self.FireWeaponBullet( attackParams.pos, attackParams.dir, 1, 0 )
+
 	if ( IsServer() )
 	{
 		local duration = self.GetWeaponInfoFileKeyField( "fire_duration" )
@@ -33,6 +36,15 @@ function OnWeaponPrimaryAttack( attackParams )
 	return 1
 }
 
+function OnWeaponNpcPrimaryAttack( attackParams )
+{
+	//self.EmitWeaponSound( "Coop_SentryGun.Fire" )
+	self.EmitWeaponNpcSound( LOUD_WEAPON_AI_SOUND_RADIUS_MP, 0.2 )
+	self.FireWeaponBullet( attackParams.pos, attackParams.dir, 1, 0 )
+
+//	self.PlayWeaponEffect( "wpn_muzzleflash_sentry", "wpn_muzzleflash_sentry", "muzzle_flash" )
+//	self.PlayWeaponEffect( "wpn_shelleject_sentry", "wpn_shelleject_sentry", "shell" )
+}
 
 function OnWeaponOffhandFirePressedNotReady( attackParams )
 {
@@ -105,6 +117,7 @@ function ShoulderTurretThink( turret, ownerPlayer, duration )
 	turret.EndSignal( "OnDeath" )
 
 	turret.EnableTurret()
+
 	EmitSoundOnEntity( ownerPlayer, "MegaTurret_Extend_Guns" )
 
 	wait duration
@@ -163,6 +176,8 @@ function UpdateShoulderTurretTargetUI( ownerPlayer, target )
 {
 	target.EndSignal( "OnDeath" )
 	ownerPlayer.EndSignal( "OnTurretTargetChanged" )
+	ownerPlayer.EndSignal( "OnDeath" ) 
+	ownerPlayer.EndSignal( "OnDestroy" )
 
 	EmitSoundOnEntity( ownerPlayer, "Weapon_SmartAmmo.TargetLocked" )
 
@@ -174,7 +189,8 @@ function UpdateShoulderTurretTargetUI( ownerPlayer, target )
 	OnThreadEnd(
 		function() : ( ownerPlayer, target )
 		{
-			if ( !IsAlive( target ) )
+			// Always hide the reticle when the thread ends, if owner is still valid
+			if ( IsValid( ownerPlayer ) && "hudElems" in ownerPlayer )
 				ownerPlayer.hudElems.TitanShoulderTurretMissileLockReticle.Hide()
 		}
 	)
@@ -193,6 +209,10 @@ function UpdateShoulderTurretTargetUI( ownerPlayer, target )
 
 	while ( true )
 	{
+		// Force the thread to end if the player is no longer in a Titan
+		if ( !ownerPlayer.IsTitan() )
+			return
+			
 		local screenHeight = GetEntityScreenHeight( ownerPlayer, target )
 		local scale = screenHeight / elemHeight
 
@@ -210,4 +230,15 @@ function UpdateShoulderTurretTargetUI( ownerPlayer, target )
 		else
 			ownerPlayer.hudElems.TitanShoulderTurretMissileLockReticle.Hide()
 	}
+}
+
+function OnWeaponActivate( activateParams )
+{
+	EmitSoundOnEntity( turret, "Coop_Weapon_SentryGun_Loop_3P" )
+}
+
+function OnWeaponDeactivate( deactivateParams )
+{
+	StopSoundOnEntity( turret, "Coop_Weapon_SentryGun_Loop_3P" )
+	EmitSoundOnEntity( turret, "Coop_Weapon_SentryGun_LoopEnd_3P" )
 }

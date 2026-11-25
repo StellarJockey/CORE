@@ -64,7 +64,7 @@ enum eDamageSourceId
 	mp_weapon_satchel
 	mp_weapon_nuke_satchel
 	mp_weapon_proximity_mine
-	mp_weapon_mega17
+	mp_weapon_sr_valkyrie7
 	mp_weapon_laser_mine
 	mp_weapon_grenade_multi
 	mp_weapon_suck
@@ -143,11 +143,13 @@ enum eDamageSourceId
 	mp_titanweapon_minigun
 	mp_titanweapon_charge_cannon
 	mp_weapon_throwing_knife
-	mp_weapon_mega6
-	mp_weapon_mega7
-	mp_weapon_mega8
-	mp_weapon_mega9
-	mp_weapon_mega10
+	mp_ability_deployable_cover
+	mp_ability_hologram
+	mp_weapon_wingman_elite
+	mp_weapon_volt
+	mp_weapon_flatline
+	mp_weapon_smoke_grenade
+	mp_weapon_bow
 
 	//damageSourceId=eDamageSourceId.xxxxx
 	//fireteam
@@ -212,7 +214,7 @@ damageSourceStrings[ eDamageSourceId.mp_weapon_grenade_emp ] 			<- "#WPN_GRENADE
 damageSourceStrings[ eDamageSourceId.mp_weapon_satchel ] 				<- "#WPN_SATCHEL"
 damageSourceStrings[ eDamageSourceId.mp_weapon_nuke_satchel ] 			<- "#WPN_SATCHEL"
 damageSourceStrings[ eDamageSourceId.mp_weapon_proximity_mine ]			<- "#WPN_PROXIMITY_MINE"
-damageSourceStrings[ eDamageSourceId.mp_weapon_mega17 ] 				<- "#DEATH_RODEO_CABER"
+damageSourceStrings[ eDamageSourceId.mp_weapon_sr_valkyrie7 ] 				<- "#DEATH_RODEO_CABER"
 
 damageSourceStrings[ eDamageSourceId.mp_extreme_environment ] 			<- "#DAMAGE_EXTREME_ENVIRONMENT"
 damageSourceStrings[ eDamageSourceId.mp_titanability_healthdrop ] 		<- "Titan Health Drop"
@@ -222,6 +224,8 @@ damageSourceStrings[ eDamageSourceId.mp_ability_cloak ] 				<- "Cloak"
 damageSourceStrings[ eDamageSourceId.mp_ability_emp ] 					<- "EMP"
 damageSourceStrings[ eDamageSourceId.mp_ability_sonar ] 				<- "Active Sonar Pulse"
 damageSourceStrings[ eDamageSourceId.mp_ability_heal ] 					<- "Health"
+damageSourceStrings[ eDamageSourceId.mp_ability_deployable_cover ] 		<- "Deployable Cover"
+damageSourceStrings[ eDamageSourceId.mp_ability_hologram ] 				<- "Hologram"
 
 
 damageSourceStrings[ eDamageSourceId.mp_weapon_laser_mine ]				<- "#WPN_LASER_MINE"
@@ -318,6 +322,11 @@ damageSourceStrings[ eDamageSourceId.mp_weapon_twinb_shotgun ] 					<- "#WPN_TWI
 damageSourceStrings[ eDamageSourceId.mp_titanweapon_minigun ] 					<- "#WPN_TITAN_MINIGUN"
 damageSourceStrings[ eDamageSourceId.mp_titanweapon_charge_cannon ] 					<- "#WPN_TITAN_CHARGE_CANNON"
 damageSourceStrings[ eDamageSourceId.mp_weapon_throwing_knife ] 					<- "#WPN_THROWING_KNIFE"
+damageSourceStrings[ eDamageSourceId.mp_weapon_wingman_elite ] 					<- "Wingman Elite"
+damageSourceStrings[ eDamageSourceId.mp_weapon_volt ] 					<- "M-18 Volt SMG"
+damageSourceStrings[ eDamageSourceId.mp_weapon_flatline ] 				<- "V-47 Flatline"
+damageSourceStrings[ eDamageSourceId.mp_weapon_smoke_grenade ] 			<- "Electric Smoke Grenade"
+damageSourceStrings[ eDamageSourceId.mp_weapon_bow ] 					<- "Bocek Compound Bow"
 
 //When adding new mods, they need to be added below and to persistent_player_data_version_N.pdef in r1/cfg/server.
 //Then when updating that file, save a new one and increment N.
@@ -392,6 +401,7 @@ enum eModSourceId
 	starburst
 	titanhammer
 	burn_mod_wingman
+
 	burn_mod_titan_shotgun
 	explosive_rounds
 	long_fuse
@@ -402,6 +412,25 @@ enum eModSourceId
 	hydraulic_launcher
 	burn_mod_throwing_knife
 	plasma_rifle
+
+	double_tap
+	laser_sight
+	skull_piercer
+	pump_action
+	cyclic_receiver
+	shredder_rounds
+	gunship_dmg
+	charge_hack
+	kick_switch
+	titan_piercer
+	gunslinger
+	auto_converter
+	
+	burn_mod_wingman_elite
+	burn_mod_volt
+	burn_mod_flatline
+	burn_mod_bow
+	burn_mod_smoke_grenade
 }
 
 //Attachments intentionally left off. This prevents them from displaying in kill cards.
@@ -455,7 +484,7 @@ modNameStrings[	eModSourceId.overcharge ] 					<- "#MOD_OVERCHARGE_NAME"
 modNameStrings[ eModSourceId.quick_shot ]					<- "#MOD_QUICK_SHOT_NAME"
 modNameStrings[ eModSourceId.rapid_fire_missiles ] 			<- "#MOD_RAPID_FIRE_MISSILES_NAME"
 modNameStrings[ eModSourceId.recoil_compensator ]			<- "#MOD_RECOIL_COMPENSATOR_NAME"
-modNameStrings[ eModSourceId.burn_mod_shotgun ] 	<- "#BC_SHOTGUN_M2"
+modNameStrings[ eModSourceId.burn_mod_shotgun ] 			<- "#BC_SHOTGUN_M2"
 modNameStrings[	eModSourceId.silencer ] 					<- "#MOD_SILENCER_NAME"
 modNameStrings[ eModSourceId.slammer ] 						<- "#MOD_SLAMMER_NAME"
 modNameStrings[ eModSourceId.spread_increase_sg ]			<- "#MOD_SPREAD_INCREASE_SG_NAME"
@@ -463,8 +492,8 @@ modNameStrings[ eModSourceId.spread_increase_ttt ]			<- "#MOD_SPREAD_INCREASE_TT
 modNameStrings[ eModSourceId.stabilizer ]					<- "#MOD_STABILIZER_NAME"
 modNameStrings[ eModSourceId.starburst ] 					<- "#MOD_STARBURST_NAME"
 modNameStrings[ eModSourceId.titanhammer ] 					<- "#MOD_TITANHAMMER_NAME"
-modNameStrings[ eModSourceId.burn_mod_wingman ] 	<- "#BC_WINGMAN_M2"
-modNameStrings[ eModSourceId.burn_mod_titan_shotgun ] 			<- "#BC_TITAN_SHOTGUN_M2"
+modNameStrings[ eModSourceId.burn_mod_wingman ] 			<- "#BC_WINGMAN_M2"
+modNameStrings[ eModSourceId.burn_mod_titan_shotgun ] 		<- "#BC_TITAN_SHOTGUN_M2"
 modNameStrings[ eModSourceId.explosive_rounds ] 			<- "#MOD_EXPLOSIVE_ROUNDS_NAME"
 modNameStrings[ eModSourceId.burn_mod_valkyrie ] 			<- "#BC_VALKYRIE_M2"
 modNameStrings[ eModSourceId.burn_mod_twinb ] 				<- "#BC_TWINB_SHOTGUN_M2"
@@ -473,3 +502,17 @@ modNameStrings[ eModSourceId.burn_mod_charge_cannon] 		<- "#BC_TITAN_CHARGE_CANN
 modNameStrings[ eModSourceId.hydraulic_launcher ] 			<- "#MOD_HYDRAULIC_LAUNCHER_NAME"
 modNameStrings[ eModSourceId.burn_mod_throwing_knife] 		<- "#BC_THROWING_KNIFE_M2"
 modNameStrings[ eModSourceId.plasma_rifle ] 				<- "#MOD_PLASMA_RIFLE_NAME"
+modNameStrings[ eModSourceId.cyclic_receiver] 				<- "Cyclic Receiver"
+modNameStrings[ eModSourceId.double_tap] 					<- "Double Tap"
+modNameStrings[ eModSourceId.pump_action] 					<- "Pump Action"
+modNameStrings[ eModSourceId.auto_converter] 				<- "Auto Converter"
+modNameStrings[ eModSourceId.skull_piercer] 				<- "Skull Piercer"
+modNameStrings[ eModSourceId.kick_switch] 					<- "Kick Switch"
+modNameStrings[ eModSourceId.laser_sight] 					<- "Laser Sight"
+modNameStrings[ eModSourceId.titan_piercer] 				<- "Titan Piercer"
+modNameStrings[ eModSourceId.gunslinger] 					<- "Gunslinger"
+modNameStrings[ eModSourceId.burn_mod_wingman_elite] 		<- "Amped Wingman Elite"
+modNameStrings[ eModSourceId.burn_mod_volt ] 				<- "Amped Volt"
+modNameStrings[ eModSourceId.burn_mod_flatline ]			<- "Amped Flatline"
+modNameStrings[ eModSourceId.burn_mod_bow ]					<- "Amped Bocek"
+modNameStrings[ eModSourceId.burn_mod_smoke_grenade ]		<- "Fog of War"

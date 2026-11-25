@@ -224,8 +224,17 @@ function CookGrenade( weapon, weaponOwner, fuseTime )
 	local angularVelocity = Vector( 0, 0, 0 )
 	local frag = weapon.FireWeaponGrenade( weapon.GetOrigin(), velocity, angularVelocity, 0.1, damageTypes.Explosive, damageTypes.Explosive, PROJECTILE_NOT_PREDICTED, false, false )
 	frag.SetOrigin( weaponOwner.GetOrigin() + Vector( 0, 0, 50 ) )
-	frag.Explode( Vector( 0, 0, 0 ) )
-	weaponOwner.Signal("ThrowGrenade")
+
+	if ( weapon.GetWeaponClassName() == "mp_weapon_smoke_grenade" )
+	{
+		thread ElectricGrenadeSmokescreen( weaponOwner, frag.GetOrigin(), ELECTRIC_SMOKESCREEN_FX_LIFETIME_TITAN, weapon )
+		frag.Kill()
+	}
+	else
+	{
+		frag.Explode( Vector( 0, 0, 0 ) )
+	}
+	weaponOwner.Signal( "ThrowGrenade" )
 }
 
 function DropGrenadeOnDeath( weapon, weaponOwner, baseFuseTime = DEFAULT_FUSE_TIME )
@@ -420,6 +429,35 @@ function EMPGrenade_DamagedPlayerOrNPC( ent, damageInfo )
 		EMPGrenade_AffectsShield( ent, damageInfo )
 		thread EMPGrenade_AffectsAccuracy( ent )
 	}
+	else if ( ent.IsNPC() && !ent.IsTitan() )
+	{
+		// Only apply to captain/pilot NPCs
+		if ( IsGruntCaptain( ent ) || IsPilot( ent ) || IsReskinnedPilot( ent ) || IsGhostPilot( ent ) )
+		{
+			local inflictor = damageInfo.GetInflictor()
+			if ( IsValid( inflictor ) )
+			{
+				local dist = Distance( damageInfo.GetDamagePosition(), ent.GetWorldSpaceCenter() )
+				local damageRadius = inflictor.GetDamageRadius()
+
+				local damageMin
+				local damageMax
+				if ( damageInfo.GetDamageSourceIdentifier() == eDamageSourceId.mp_weapon_proximity_mine )
+				{
+					damageMin = PROX_MINE_PILOT_DAMAGE_MIN
+					damageMax = PROX_MINE_PILOT_DAMAGE_MAX
+				}
+				else
+				{
+					damageMin = EMP_GRENADE_PILOT_DAMAGE_MIN
+					damageMax = EMP_GRENADE_PILOT_DAMAGE_MAX
+				}
+
+				local damage = GraphCapped( dist, damageRadius * 0.5, damageRadius, damageMax, damageMin )
+				damageInfo.SetDamage( damage )
+			}
+		}
+	}
 
 	if ( !ent.IsPlayer() || ent.IsTitan() ) //Beam should hit cloaked targets, when cloak is updated make IsCloaked() function.
 		EMPGrenade_ArcBeam( damageInfo.GetDamagePosition(), ent )
@@ -498,7 +536,7 @@ function EMPGrenade_EffectsPlayer( player, damageInfo )
 
 		EMPGrenade_AffectsShield( player, damageInfo )
 
-		// Remote.CallFunction_Replay( player, "ServerCallback_TitanEMP", strength, duration, fadeoutDuration )
+		Remote.CallFunction_Replay( player, "ServerCallback_TitanEMP", strength, duration, fadeoutDuration )
 
 		local duration = GraphCapped( frac, 0.0, 1.0, EMP_GRENADE_SLOW_DURATION_MIN, EMP_GRENADE_SLOW_DURATION_MAX )
 		local scale = GraphCapped( frac, 0.0, 1.0, EMP_GRENADE_SLOW_SCALE_MIN, EMP_GRENADE_SLOW_SCALE_MAX )

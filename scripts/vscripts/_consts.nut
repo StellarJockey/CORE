@@ -1,4 +1,4 @@
-const PERSISTENCE_INIT_VERSION = 22
+const PERSISTENCE_INIT_VERSION = 22 // FO
 
 const RANDOMIZE_BOT_LOADOUT	= 1
 
@@ -60,7 +60,6 @@ const TITAN_TAG = "tt"
 const SCAVENGER = "scv"
 const TITAN_ESCORT = "te"
 const VARIETY_PACK = "all"
-const DEADLY_GROUND = "lava"
 const DEVTEST = "devtest"
 const FFA = "ffa"
 const TITAN_BRAWL = "ttdm"
@@ -72,6 +71,7 @@ const BURN_CARD_ESCALATION = "bce"
 const TITAN_FFA = "tffa"
 const TURBO_TITAN_BRAWL = "ttdm_turbo"
 const TURBO_TITAN_FFA = "tffa_turbo"
+
 
 const MAX_TRACKED_CHALLENGES = 3
 
@@ -1921,7 +1921,7 @@ const COOP_SENTRY_TURRET_MAX_COUNT_INV		= 3
 const COOP_TURRET_TOTAL_KILLS_TO_LEVEL_UP	= 10
 const COOP_TURRET_TITAN_KILLS_TO_LEVEL_UP	= 1
 
-const TD_GENERATOR_HEALTH				= 30000.0
+const TD_GENERATOR_HEALTH				= 60000.0 // 30000.0
 const TD_GENERATOR_SHIELD_HEALTH		= 3000.0
 const GENERATOR_SHIELD_REGEN_DELAY		= 10.0
 const GENERATOR_SHIELD_REGEN_TIME		= 10.0
@@ -1954,6 +1954,7 @@ const MODEL_BUBBLESHIELD_SPECTRE		= "models/Robots/spectre/spectre_corporate.mdl
 const SUICIDE_SPECTRE_MODEL				= "models/Robots/spectre/spectre_corporate.mdl"
 const SNIPER_SPECTRE_MODEL				= "models/Robots/spectre/spectre_corporate.mdl"
 const CLOAKED_DRONE_MODEL				= "models/robots/agp/agp_hemlok_larger.mdl"
+const COMBAT_DRONE_MODEL				= "models/robots/drone_air_attack/drone_air_attack_plasma.mdl"
 const LAPTOP_MODEL_SMALL 				= "models/communication/terminal_usable_airbase.mdl"
 
 const FX_GEN_HARVESTER_BEAM				= "P_harvester_beam"
@@ -2157,6 +2158,9 @@ enum eChallengeCategory
 	WEAPON_DMR,
 	WEAPON_SNIPER,
 	WEAPON_VALKYRIE,
+	WEAPON_VOLT,
+	WEAPON_FLATLINE,
+	WEAPON_BOW,
 
 	PILOT_SECONDARY,	// Only used by challenges menu
 
@@ -2171,6 +2175,7 @@ enum eChallengeCategory
 	WEAPON_SEMIPISTOL
 	WEAPON_WINGMAN,
 	WEAPON_TWINB,
+	WEAPON_WINGMAN_ELITE,
 
 	PILOT_ORDNANCE,
 
@@ -2178,6 +2183,8 @@ enum eChallengeCategory
 	WEAPON_EMP_GRENADE,
 	WEAPON_PROXIMITY_MINE,
 	WEAPON_SATCHEL,
+	WEAPON_THROWING_KNIFE,
+	WEAPON_SMOKE_GRENADE,
 
 	COOP,
 	REGEN_REQUIREMENTS,
@@ -2644,6 +2651,11 @@ const WEAPON_TWINB_NAME = "mp_weapon_twinb_shotgun"
 const WEAPON_THUNDERBOLT_NAME = "mp_titanweapon_minigun"
 const WEAPON_CHARGE_CANNON_NAME = "mp_titanweapon_charge_cannon"
 const WEAPON_THROWING_KNIFE_NAME = "mp_weapon_throwing_knife"
+const WEAPON_WINGMAN_ELITE_NAME = "mp_weapon_wingman_elite"
+const WEAPON_VOLT_NAME = "mp_weapon_volt"
+const WEAPON_FLATLINE_NAME = "mp_weapon_flatline"
+const WEAPON_SMOKE_GRENADE = "mp_weapon_smoke_grenade"
+const WEAPON_BOW = "mp_weapon_bow"
 
 enum eUIEvent
 {

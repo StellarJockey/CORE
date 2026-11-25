@@ -1,4 +1,4 @@
-const HARDPOINT_SHIFT_DELAY = 5
+const HARDPOINT_SHIFT_DELAY = 5 // FO
 
 const CP_AWARD_TEAM_OWNED_POINTS_SIGNAL = "CP_AWARD_TEAM_OWNED_POINTS_SIGNAL"
 const CP_AWARD_PLAYER_HOLD_POINTS_SIGNAL = "CP_AWARD_PLAYER_HOLD_POINTS_SIGNAL"
@@ -7,6 +7,7 @@ const CP_LEAVE_TRIGGER = "CP_LEAVE_TRIGGER"
 const CP_REINFORCE_INTERVAL = 1.0
 const CP_CAPTURE_HINT_RADIUS = 1536
 const CP_NAG_DEBOUNCE_TIME = 90
+const HARDPOINT_MIN_DEFENDERS = 4
 
 function main()
 {
@@ -68,7 +69,7 @@ function main()
 	file.triggerLeaveFuncs <- []
 	file.usedHardpointIDs <- {}
 	file.hardpointUpdateFunc <- null
-	level.AIUseCapturePointTerminals <- true
+	level.AIUseCapturePointTerminals <- false // true means AI can only cap when sitting at terminal
 
 	AddCallback_OnClientConnecting( Hardpoint_OnClientConnecting )
 
@@ -767,6 +768,9 @@ function EntityCanCapturePoints( entity )
 	if ( entity.IsPlayer() )
 		return true
 
+	if ( "isHologram" in entity.s )
+		return false
+
 	if ( entity.GetTeam() == TEAM_IMC || entity.GetTeam() == TEAM_MILITIA )
 	{
 		if ( entity.IsNPC() )
@@ -1205,6 +1209,12 @@ function HardpointTerminal_HaveRecentEnemy( guys, terminal )
 //////////////////////////////////////////////////////////
 function GetSlot( guy, terminal, hardpoint )
 {
+	if ( "suicideBehavior" in guy.s )
+		return false
+
+	if ( "isHologram" in guy.s )
+		return false
+
 	if ( terminal.s.slotsInUse >= 2 )
 		return false
 
@@ -1483,7 +1493,7 @@ function ConvergeAtTerminal( guy, hardpoint )
 
 	local origin = assaultPoint.GetOrigin()
 	local angles = assaultPoint.GetAngles()
-	SetAssaultPointValues( guy.s.assaultPoint, 512, 128, 1, 1 )
+	SetAssaultPointValues( guy.s.assaultPoint, 150, 128, 1, 1 )
 	waitthread GotoOriginCP( guy, origin, angles )
 
 	// delay the change of state a bit to make it look more natural
@@ -1613,6 +1623,12 @@ function SquadCapturePointThink( squadName, capturepoint, team )
 		guys = ArrayClosest( guys, terminal.GetOrigin() )
 
 		local state = GetCapturePointThinkState( capturepoint, team, guys )
+
+		if ( state == "OWNED"
+			&& RedeployHardpointAttackers( guys, capturepoint, team ) )
+		{
+			continue // Refresh squad membership after reassignment.
+		}
 
 		switch ( state )
 		{
@@ -1767,6 +1783,79 @@ function SquadCapturePointThink( squadName, capturepoint, team )
 }
 
 //////////////////////////////////////////////////////////
+// Called while a squad owns its point. Keeps at least HARDPOINT_MIN_DEFENDERS
+// on this point and sends any spare NPCs to the hardpoint that needs them most.
+// Returns true if anyone was reassigned, so the caller refreshes the squad.
+function RedeployHardpointAttackers( guys, capturepoint, team )
+{
+	if ( guys.len() <= HARDPOINT_MIN_DEFENDERS )
+		return false
+
+	// pick the best other hardpoint: fewest friendly NPCs, and prefer points we don't own yet
+	local targetPoint = null
+	local bestScore = 999999
+
+	foreach ( hp in GetHardpoints() )
+	{
+		if ( hp == capturepoint )
+			continue
+
+		if ( !hp.Enabled() )
+			continue
+
+		local score = GetHardpointNPCCount( hp, team ) * 10
+
+		if ( hp.GetTeam() == team )
+			score += 100	// already ours, lower priority
+
+		if ( score < bestScore )
+		{
+			bestScore = score
+			targetPoint = hp
+		}
+	}
+
+	if ( !targetPoint )
+		return false
+
+	// guys is sorted closest-to-terminal first, so the extras are at the end of the array.
+	// Walk backwards so the farthest NPCs leave first and the closest stay as defenders.
+	local extraCount = guys.len() - HARDPOINT_MIN_DEFENDERS
+	local targetSquadName = GetHardpointSquadName( targetPoint, team )
+	local moved = 0
+
+	for ( local i = guys.len() - 1; i >= 0 && moved < extraCount; i-- )
+	{
+		local guy = guys[ i ]
+
+		if ( !IsAlive( guy ) )
+			continue
+
+		// don't yank anyone out of a terminal animation / slot transition
+		if ( NPCBusyAtHardpoint( guy ) )
+			continue
+
+		// drop whatever they're doing at this point and release claimed nodes/slots
+		guy.Signal( "Interrupt" )
+		guy.Signal( "StopHardpointBehavior" )
+
+		if ( "cpState" in guy.s )
+			guy.s.cpState = eNPCStateCP.NONE
+
+		SetSquad( guy, targetSquadName )
+		moved++
+	}
+
+	if ( !moved )
+		return false
+
+	// (re)start the state machine for the squad that just received reinforcements
+	thread SquadCapturePointThink( targetSquadName, targetPoint, team )
+
+	return true
+}
+
+//////////////////////////////////////////////////////////
 function GetCapturePointThinkState( capturepoint, team, guys )
 {
 //		OWNED is when it's owned by the own team
@@ -1806,7 +1895,11 @@ function WaitForUpdate( capturepoint, guys, state )
 
 	if ( state == "CONTESTED" )
 	{
-		wait 1.0 // check the state periodically in case we haven't seen the enemy in a while.
+		wait 1.0
+	}
+	else if ( state == "OWNED" )
+	{
+		wait 5.0
 	}
 	else
 	{

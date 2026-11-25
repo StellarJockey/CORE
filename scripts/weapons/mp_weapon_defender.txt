@@ -50,6 +50,12 @@ WeaponData
 	"critical_hit"									"1"
 
 	// Damage - When Used by NPCs
+	"npc_damage_near_distance"							"200"
+	"npc_damage_far_distance" 							"15000"
+	"npc_damage_near_value"   							"500"
+	"npc_damage_far_value"								"500"
+	"npc_damage_near_value_titanarmor"					"1150"
+	"npc_damage_far_value_titanarmor" 					"1150"
 
 	// Ammo
 	"ammo_stockpile_max"							"3000"
@@ -125,24 +131,33 @@ WeaponData
 	"bob_yaw" 										"1"
 	"bob_roll"										"-0.75"
 
-	// View Drift
-	"viewdrift_hipfire_stand_scale_pitch" 			"0.325"
-	"viewdrift_hipfire_crouch_scale_pitch"			"0.275"
-	"viewdrift_hipfire_air_scale_pitch"   			"0.5"
-	"viewdrift_hipfire_stand_scale_yaw"   			"0.12"
-	"viewdrift_hipfire_crouch_scale_yaw"  			"0.10"
-	"viewdrift_hipfire_air_scale_yaw" 				"0.22"
-	"viewdrift_hipfire_speed_pitch"   				"0.6"
-	"viewdrift_hipfire_speed_yaw" 					"1.22"
+	// Bob_Zoomed
+	"bob_cycle_time_zoomed"  						"0.45"
+	"bob_vert_dist_zoomed"   						"0.01"
+	"bob_horz_dist_zoomed"   						"0.01"
+	"bob_max_speed_zoomed"   						"150"
+	//"bob_pitch_zoomed"   							"0.002"
+	//"bob_yaw_zoomed" 								"-.002"
+	//"bob_roll_zoomed"								".002"
 
-	"viewdrift_ads_stand_scale_pitch" 				"0.2"
-	"viewdrift_ads_crouch_scale_pitch"				"0.1"
-	"viewdrift_ads_air_scale_pitch"   				"0.6"
-	"viewdrift_ads_air_scale_yaw" 					"0.5"
-	"viewdrift_ads_stand_scale_yaw"   				"0.2"
-	"viewdrift_ads_crouch_scale_yaw"  				"0.1"
-	"viewdrift_ads_speed_pitch"   					"0.6"
-	"viewdrift_ads_speed_yaw" 						"1.22"
+	// View Drift
+	"viewdrift_hipfire_stand_scale_pitch" 			"0.0" // "0.325"
+	"viewdrift_hipfire_crouch_scale_pitch"			"0.0" // "0.275"
+	"viewdrift_hipfire_air_scale_pitch"   			"0.0" // "0.5"
+	"viewdrift_hipfire_stand_scale_yaw"   			"0.0" // "0.12"
+	"viewdrift_hipfire_crouch_scale_yaw"  			"0.0" // "0.10"
+	"viewdrift_hipfire_air_scale_yaw" 				"0.0" // "0.22"
+	"viewdrift_hipfire_speed_pitch"   				"0.0" // "0.6"
+	"viewdrift_hipfire_speed_yaw" 					"0.0" // "1.22"
+
+	"viewdrift_ads_stand_scale_pitch" 				"0.0" // "0.2"
+	"viewdrift_ads_crouch_scale_pitch"				"0.0" // "0.1"
+	"viewdrift_ads_air_scale_pitch"   				"0.0" // "0.6"
+	"viewdrift_ads_air_scale_yaw" 					"0.0" // "0.5"
+	"viewdrift_ads_stand_scale_yaw"   				"0.0" // "0.2"
+	"viewdrift_ads_crouch_scale_yaw"  				"0.0" // "0.1"
+	"viewdrift_ads_speed_pitch"   					"0.0" // "0.6"
+	"viewdrift_ads_speed_yaw" 						"0.0" // "1.22"
 
 	// Rumble
 	"fire_rumble"									"pilot_singleshot_verystrong_fire"
@@ -202,7 +217,7 @@ WeaponData
 	"rest_time_between_bursts_max"					"2.5"
 
 	// WeaponED Unhandled Key/Values and custom script Key/Values
-	"sound_dryfire"   								"titan_dryfire"
+	"sound_dryfire"   								"ChargeRifle_TriggerOn"
 	"viewdrift_hipfire_stand_scale_pitch" 			"0.1"
 	"viewdrift_hipfire_crouch_scale_pitch"			"0.1"
 	"viewdrift_hipfire_air_scale_pitch"   			"0.1"
@@ -222,7 +237,7 @@ WeaponData
 	"npc_reload_enabled"  							"0"
 	"npc_vortex_block"								"1"
 	"sprintcycle_time"								"0.55"
-
+	"is_anti_titan"  							    "1"
 	"hud_icon"										"HUD/dpad_defender"
 
 	// Crosshair
@@ -234,8 +249,20 @@ WeaponData
 		{
 			"crosshair_index"								"1"
 			"charge_time" 									"*0.5"
-			"is_burn_mod"		"1"
+			"is_burn_mod"									"1"
 		}
+		"charge_hack"
+		{
+			
+			"charge_time" 									"*0.6"
+			"impact_effect_table" 							"exp_arc_cannon"
+
+			"damage_near_value"   							"190"
+			"damage_far_value"								"190"
+			"damage_near_value_titanarmor"					"*0.7"
+			"damage_far_value_titanarmor" 					"*0.7"
+		}
+		
 	}
 
 	CrosshairData
@@ -270,7 +297,7 @@ WeaponData
 				"size_x"					"64"
 				"size_y"					"64"
 				"scale_ads"					"1.4"
-				"draw_while_hip"		"0"
+				"draw_while_hip"			"0"
 			}
 			Element3
 			{
@@ -279,50 +306,16 @@ WeaponData
 				"size_x"					"64"
 				"size_y"					"64"
 				"scale_ads"					"1.3"
-				"draw_while_hip"		"0"
+				"draw_while_hip"			"0"
 			}
 		}
 		Burn_Mod //Match BaseWeapon + default color change until override setting.
 		{
+			"inherit_data_from"				"BaseWeapon"
+
 			DefaultElementBehavior
 			{
-				"fade_while_sprinting"	"1"
-				"fade_while_reloading"	"1"
 				"default_color"				"246 134 40 255"
-			}
-			Element0
-			{
-				"type"						"static"
-				"material"					"/hud/crosshairs/arc_cannon_charge/defender_charge"
-				"size_x"					"80"
-				"size_y"					"80"
-				"scale_ads"					"1.25"
-			}
-			Element1
-			{
-				"type"						"static"
-				"material"					"/hud/crosshairs/arc_cannon_shadow"
-				"size_x"					"80"
-				"size_y"					"80"
-				"scale_ads"					"1.25"
-			}
-			Element2
-			{
-				"type"						"static"
-				"material"					"hud/crosshairs/dot"
-				"size_x"					"64"
-				"size_y"					"64"
-				"scale_ads"					"1.4"
-				"draw_while_hip"		"0"
-			}
-			Element3
-			{
-				"type"						"static"
-				"material"					"hud/crosshairs/dot_shadow"
-				"size_x"					"64"
-				"size_y"					"64"
-				"scale_ads"					"1.3"
-				"draw_while_hip"		"0"
 			}
 		}
 	}

@@ -58,9 +58,8 @@ function main()
 			break
 
 		default:
-			if ( !IsLobby() || !IsMultiGamemodePlaylist( GAMETYPE ) )
-				GameMode_RunSharedDialogueScripts( GAMETYPE )
-			break
+			GameMode_RunSharedDialogueScripts( GAMETYPE )
+
 	}
 
 	RegisterR1DeltaConversations()
@@ -271,7 +270,7 @@ function RegisterGameStateConversations()
 
 	AddVDULineForBlisk( "WinningScoreBigMarginMatchMid", "diag_imc_blisk_gs_imcReachM2_LeadGreat_01" ) // Blisk: Blisk to all IMC units: we're completely outclassing the Militia. Keep up the good work!
 	AddVDULineForBlisk( "WinningScoreBigMarginMatchMid", "diag_imc_blisk_gs_imcReachM2_LeadGreat_02" ) // Blisk: All units, we're destroying the Militia forces, and we're about halfway through the mission. Keep pouring it on.
-	//AddVDULineForBlisk( "WinningScoreBigMarginMatchMid", "diag_imc_blisk_gs_imcReachM2_LeadGreat_03" ) // Blisk: Blisk to all Pilots: we're crushing the terrorists, they're barely putting up a fight. Whatever you're doing, it's working - keep it up.
+	AddVDULineForBlisk( "WinningScoreBigMarginMatchMid", "diag_imc_blisk_gs_imcReachM2_LeadGreat_03" ) // Blisk: Blisk to all Pilots: we're crushing the terrorists, they're barely putting up a fight. Whatever you're doing, it's working - keep it up.
 	AddVDUAnimWithEmbeddedAudioForBlisk( "WinningScoreBigMarginMatchMid", "diag_imc_blisk_gs_bigwinning_03" ) // Blisk: Tac Six to all Pilots: we're crushing the terrorists, they're barely putting up a fight. Whatever you're doing, it's working - keep it up.
 
 	/**************************  CloseScoreMatchMid  *****************************/
@@ -521,6 +520,7 @@ function RegisterGameStateConversations()
 	AddVDULineForBish( "WinningScoreSmallMarginMatchEarly", "diag_mcor_bish_gs_milReachM1_LeadSlight_02" ) // Bish: Hey, we're barely ahead of the IMC right now,  but there's plenty of time left to step it up.
 
 	AddVDUAnimWithEmbeddedAudioForBish( "WinningScoreSmallMarginMatchEarly", "diag_gs_mcor_bish_closewinning_01" ) 	// Bish: We're barely ahead of the IMC, man. The battle projections say it's gonna be real close.
+	AddVDULineForBish( "WinningScoreSmallMarginMatchEarly", "diag_gs_mcor_bish_closewinning_02" ) 	// Bish: Team, we have the upper hand right now, but not by much.
 
 
 	/**************************  WinningScoreBigMarginMatchEarly  *****************************/
@@ -531,6 +531,8 @@ function RegisterGameStateConversations()
 	AddVDULineForBish( "WinningScoreBigMarginMatchEarly", "diag_mcor_bish_gs_milReachM1_LeadGreat_03" ) // Bish: We're just getting started, but this is looking really good. Keep up the fire.
 
 	AddVDUAnimWithEmbeddedAudioForBish( "WinningScoreBigMarginMatchEarly", "diag_gs_mcor_bish_bigwinning_01" ) // Bish: We're crushing them big time, don't let up!
+	AddVDULineForBish( "WinningScoreBigMarginMatchEarly", "diag_gs_mcor_bish_bigwinning_02" ) // Bish: We're doing great, man! Keep it up!
+	AddVDULineForBish( "WinningScoreBigMarginMatchEarly", "diag_gs_mcor_bish_bigwinning_03" ) // Bish: Hey buddy, we're doing great! If this keeps up, I think we're gonna win this fight.
 
 	/**************************  CloseScoreMatchEarly  *****************************/
 	/**************************        MILITIA        *****************************/
@@ -578,11 +580,13 @@ function RegisterGameStateConversations()
 
 	/**************************  WonAnnouncement  *****************************/
 	/**************************      MILITIA      *****************************/
+	AddVDULineForBish( "WonAnnouncement", "diag_gs_mcor_bish_gamewon_01" )  // Bish: And that, my friends, is how we do that! Mission accomplished. Come on home.
 	AddVDUAnimWithEmbeddedAudioForBish( "WonAnnouncement", "diag_gs_mcor_bish_gamewon_02" )  // Bish: All right, we got what we came for! Awesome work team, mission accomplished.
+	AddVDULineForBish( "WonAnnouncement", "diag_gs_mcor_bish_gamewon_03" )  // Bish: We took a lot of loses, but we got what we came for. Good work out there.
 
 	/**************************  WonAnnouncementShort  *****************************/
 	/**************************      MILITIA      *****************************/
-	//AddVDULineForBish( "WonAnnouncementShort", "diag_gm_matchWin_101_03_mcor_BISH" )  // Bish: Excellent work Pilots. We've won.
+	AddVDULineForBish( "WonAnnouncementShort", "diag_gm_matchWin_101_03_mcor_BISH" )  // Bish: Excellent work Pilots. We've won.
 	AddVDULineForBish( "WonAnnouncementShort", "diag_gm_matchWin_101_04_mcor_BISH" )  // Bish: Pilots! We've won the battle! Good work.
 
 
@@ -616,6 +620,7 @@ function RegisterGameStateConversations()
 	AddVDULineForBish( "LosingScoreSmallMarginMatchMid", "diag_mcor_bish_gs_imcReachM2_LeadSlight_01" ) // Bish: Hey buddy, we're still in the fight, but the IMC have the upper hand right now.  We still have time to get ahead, so don't let up.
 	AddVDULineForBish( "LosingScoreSmallMarginMatchMid", "diag_mcor_bish_gs_imcReachM2_LeadSlight_02" ) // Bish: Ok buddy, it's still a close fight, but we're definitely behind right now.  There's some time left to turn things around.
 	AddVDUAnimWithEmbeddedAudioForBish( "LosingScoreSmallMarginMatchMid", "diag_gs_mcor_bish_closelosing_01" ) // Bish: Ok buddy, it's still a close fight, but we're definitely behind right now.
+	AddVDULineForBish( "LosingScoreSmallMarginMatchMid", "diag_gs_mcor_bish_closelosing_02" ) // Bish: Ok buddy, it's still a close fight, but we're definitely behind right now.
 
 
 	/**************************  LosingScoreBigMarginMatchMid  *****************************/
@@ -623,6 +628,8 @@ function RegisterGameStateConversations()
 
 	AddVDULineForBish( "LosingScoreBigMarginMatchMid", "diag_mcor_bish_gs_imcReachM2_LeadGreat_01" ) // Bish: Bad news boss. The IMC are way ahead of us! There's still some time to catch up though.
 	AddVDUAnimWithEmbeddedAudioForBish( "LosingScoreBigMarginMatchMid", "diag_gs_mcor_bish_biglosing_01" ) // Bish: Boss, we're seriously losing this fight, you gotta step it up out there!
+	AddVDULineForBish( "LosingScoreBigMarginMatchMid", "diag_gs_mcor_bish_biglosing_02" ) // Bish: We're losing, man. We gotta turn this fight around and I mean right now.
+	AddVDULineForBish( "LosingScoreBigMarginMatchMid", "diag_gs_mcor_bish_biglosing_03" ) // Bish: Bad news, boss, they're way ahead of us, but we can still catch up. Don't give up.
 	AddVDULineForBish( "LosingScoreBigMarginMatchMid", "diag_mcor_bish_gs_imcReachM2_LeadGreat_03" ) // Bish: We're losing man� we gotta turn this fight around, and I mean right now.
 
 	/************************** LosingScoreSmallMarginMatchLate *****************************/
@@ -641,6 +648,8 @@ function RegisterGameStateConversations()
 	/**************************  LostAnnouncement  *****************************/
 	/**************************      MILITIA       *****************************/
 
+	AddVDULineForBish( "LostAnnouncement", "diag_gs_mcor_bish_gamelost_01" ) 	// Bish: Gah! Chock one up for the bad guys. We lost this one. It's over.
+	AddVDULineForBish( "LostAnnouncement", "diag_gs_mcor_bish_gamelost_02" ) 	// Bish: They kicked our ass, man... Get the hell out of there. We'll get 'em next time.
 	AddVDUAnimWithEmbeddedAudioForBish( "LostAnnouncement", "diag_gs_mcor_bish_gamelost_03" ) 	// Bish: It's over guys. We lost - fall back to base.
 
 	/**************************  LostAnnouncementShort  *****************************/
@@ -756,10 +765,10 @@ function RegisterReplacementTitanConversations()
 	AddVDUAnimWithEmbeddedAudioForSarah( "TitanReplacementETA15s", "diag_mcor_sarah_firsttitan_eta_04" ) //SARAH: "Titan ready in 15 seconds."
 
 	//Commenting out these lines for E3, using the first Titan ETA lines instead.
-	/*AddVDULineForSarah( "TitanReplacementETA120s", "diag_mcor_sarah_replacement_eta_01" ) //Sarah: "Pilot, your Replacement Titan will be ready in 2 minutes."
+	AddVDULineForSarah( "TitanReplacementETA120s", "diag_mcor_sarah_replacement_eta_01" ) //Sarah: "Pilot, your Replacement Titan will be ready in 2 minutes."
 	AddVDULineForSarah( "TitanReplacementETA60s", "diag_mcor_sarah_replacement_eta_02" ) //Sarah: "Hey, your Replacement Titan will be ready in 60 seconds."
 	AddVDULineForSarah( "TitanReplacementETA30s", "diag_mcor_sarah_replacement_eta_03" ) //Sarah: "Be advised, Replacement Titan ready in 30 seconds."
-	AddVDULineForSarah( "TitanReplacementETA15s", "diag_mcor_sarah_replacement_eta_04" ) //Sarah: "Replacement Titan ready in 15 seconds." */
+	AddVDULineForSarah( "TitanReplacementETA15s", "diag_mcor_sarah_replacement_eta_04" ) //Sarah: "Replacement Titan ready in 15 seconds." 
 
 	/************************   TitanReplacement   ***************************/
 	AddVDUAnimWithEmbeddedAudioForSarah( "TitanReplacement", "diag_mcor_sarah_firsttitan_03" ) //SARAH: "It's on the way. Standby for Titanfall."
@@ -1128,8 +1137,6 @@ function RegisterR1DeltaConversations()
 	RegisterConversation( "CoopTD_SpectreRodeoWarning", 			VO_PRIORITY_GAMESTATE ) // Spectre rodeoing player- HACK the priority is super high so players will hear it
 	RegisterConversation( "CoopTD_SpectreRodeoWarning_Short", 		VO_PRIORITY_GAMESTATE ) // Spectre rodeoing player (short duration variant)
 
-	RegisterConversation( "PlayerKicked",				    		VO_PRIORITY_PLAYERSTATE )
-
 	if ( IsServer() )
 		return
 
@@ -1148,12 +1155,8 @@ function RegisterR1DeltaConversations()
 	AddVDULineForBlisk( "PS_1KillBeforeTitan", "diag_gm_8v8_titanProgAnnc1_imc_Blisk" )
 	AddVDULineForBlisk( "PS_TitanReady", "diag_gm_8v8_titanProgReady_imc_Blisk" )
 
-	AddVDULineForBlisk( "NoEject", "diag_gm_tidm_noEjectNote_imc_Blisk" )
-	AddVDULineForBlisk( "NoDisembark", "diag_gm_tidm_noDisembarkNote_imc_Blisk" )
-
-	AddVDULineForBlisk( "PlayerKicked", "diag_imc_blisk_kc_pilotejectkill_03" ) //Blisk: You almost feel bad for them.
-	AddVDULineForBlisk( "PlayerKicked", "diag_imc_blisk_kc_iced_01" ) //Blisk: That should cool him off.
-	AddVDULineForBlisk( "PlayerKicked", "diag_imc_blisk_kc_dominating_04" ) //Blisk: He's going to hold a grudge.
+	AddVDULineForBlisk( "NoEject", "" )      // diag_gm_tidm_noEjectNote_imc_Blisk
+	AddVDULineForBlisk( "NoDisembark", "" )  // diag_gm_tidm_noDisembarkNote_imc_Blisk
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1172,16 +1175,17 @@ function RegisterR1DeltaConversations()
 	AddVDULineForBish( "PS_1KillBeforeTitan", "diag_gm_8v8_titanProgAnnc1_mcor_Bish" )
 	AddVDULineForBish( "PS_TitanReady", "diag_gm_8v8_titanProgReady_mcor_Bish" )
 
-	AddVDULineForBish( "NoEject", "diag_gm_tidm_noEjectNote_mcor_Bish" )
-	AddVDULineForBish( "NoDisembark", "diag_gm_tidm_noDisembarkNote_mcor_Bish" )
+	AddVDULineForBish( "NoEject", "" )      // diag_gm_tidm_noEjectNote_mcor_Bish
+	AddVDULineForBish( "NoDisembark", "" )  // diag_gm_tidm_noDisembarkNote_mcor_Bish
 
-	AddVDULineForBish( "PlayerKicked", "diag_kc_bish_pilotejectkill_03" ) //Bish: You almost feel bad for them... Naah
-	AddVDULineForBish( "PlayerKicked", "diag_kc_bish_iced_01" ) //Bish: That should cool him off.
-	AddVDULineForBish( "PlayerKicked", "diag_kc_bish_dominating_04" ) //Bish: He's going to hold a grudge.
 
-	// Spectre rodeoing player
-	AddVDULineForSarah( "CoopTD_SpectreRodeoWarning", "diag_gm_coop_spectreRodeo_mcor_Sarah" )
+	if ( GameRules.GetGameMode() == COOPERATIVE )
+		// Spectre rodeoing player
+		AddVDULineForSarah( "CoopTD_SpectreRodeoWarning", "diag_gm_coop_spectreRodeo_mcor_Sarah" )
 
-	// Spectre rodeoing player (short duration variant)
-	AddVDULineForSarah( "CoopTD_SpectreRodeoWarning_Short", "diag_gm_coop_spectreRodeoShort_mcor_Sarah" )
+		// Spectre rodeoing player (short duration variant)
+		AddVDULineForSarah( "CoopTD_SpectreRodeoWarning_Short", "diag_gm_coop_spectreRodeoShort_mcor_Sarah" )
+	
+	AddVDULineForSarah( "CoopTD_SpectreRodeoWarning", "" )
+	AddVDULineForSarah( "CoopTD_SpectreRodeoWarning_Short", "" )
 }

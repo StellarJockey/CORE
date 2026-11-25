@@ -15,9 +15,9 @@ WeaponData
 	"minimap_reveal_distance"						"32000"
 
 	// Menu Stats
-	"stat_damage" 									"50"
-	"stat_range"  									"70"
-	"stat_accuracy"   								"65"
+	"stat_damage" 									"90"
+	"stat_range"  									"18"
+	"stat_accuracy"   								"15"
 	"stat_rof"										"30"
 
 	// Models
@@ -53,9 +53,9 @@ WeaponData
 
 	// Damage - When Used by Players
 	"damage_type" 									"buckshot"
-	"damage_near_distance"							"300"
-	"damage_far_distance" 							"700"
-	"damage_near_value"   							"130"
+	"damage_near_distance"							"380"  // "300"
+	"damage_far_distance" 							"1000" // "700"
+	"damage_near_value"   							"285"  // "130"
 	"damage_far_value"								"35"
 	"damage_falloff_type"							"inverse"
 	"damage_inverse_distance"						"130"
@@ -64,16 +64,16 @@ WeaponData
 	"damage_rodeo" 									"700"
 
 	// Damage - When Used by NPCs
-	"npc_damage_near_distance"						"100"
-	"npc_damage_far_distance" 						"1200"
-	"npc_damage_near_value"   						"40"
-	"npc_damage_far_value"							"20"
-	"npc_damage_near_value_titanarmor"				"40"
-	"npc_damage_far_value_titanarmor" 				"0"
+	"npc_damage_near_distance"						"350"
+	"npc_damage_far_distance" 						"800"
+	"npc_damage_near_value"   						"250"
+	"npc_damage_far_value"							"35"
+	"npc_damage_near_value_titanarmor"				"130"
+	"npc_damage_far_value_titanarmor" 				"10"
 
 	"impulse_force"   								"800"
 
-	"critical_hit_damage_scale"						"2.0"
+	"critical_hit_damage_scale"						"1.5"
 	"critical_hit"									"1"
 
 	// Ammo
@@ -82,7 +82,7 @@ WeaponData
 	"ammo_default_total"							"30"
 
 	// Behavior
-	"fire_rate"   									"2.2"
+	"fire_rate"   									"2.5"
 	"zoom_time_in"									"0.2"
 	"zoom_time_out"   								"0.2"
 	"zoom_fov"										"55"
@@ -100,7 +100,7 @@ WeaponData
 	"allow_empty_click"   							"1"  
 	"empty_reload_only"   							"0"	 // 탄약 소진 시에만 장전 가능
 	"trigger_snipercam"   							"0"
-	"allow_headshots" 								"0"
+	"allow_headshots" 								"1"
 	"primary_fire_does_not_block_sprint"			"0"
 	"ads_move_speed_scale"							"0.75" // 사격 시 이동 수준을 권총,SMG 수준으로 상향
 	"aimassist_disable_hipfire"						"0"
@@ -169,23 +169,23 @@ WeaponData
 	"bob_roll"										"-0.75"
 
 	// View Drift
-	"viewdrift_hipfire_stand_scale_pitch" 			"0.325"
-	"viewdrift_hipfire_crouch_scale_pitch"			"0.275"
-	"viewdrift_hipfire_air_scale_pitch"   			"0.5"
-	"viewdrift_hipfire_stand_scale_yaw"   			"0.12"
-	"viewdrift_hipfire_crouch_scale_yaw"  			"0.10"
-	"viewdrift_hipfire_air_scale_yaw" 				"0.22"
-	"viewdrift_hipfire_speed_pitch"   				"0.6"
-	"viewdrift_hipfire_speed_yaw" 					"1.22"
+	"viewdrift_hipfire_stand_scale_pitch" 			"0.0" // "0.325"
+	"viewdrift_hipfire_crouch_scale_pitch"			"0.0" // "0.275"
+	"viewdrift_hipfire_air_scale_pitch"   			"0.0" // "0.5"
+	"viewdrift_hipfire_stand_scale_yaw"   			"0.0" // "0.12"
+	"viewdrift_hipfire_crouch_scale_yaw"  			"0.0" // "0.10"
+	"viewdrift_hipfire_air_scale_yaw" 				"0.0" // "0.22"
+	"viewdrift_hipfire_speed_pitch"   				"0.0" // "0.6"
+	"viewdrift_hipfire_speed_yaw" 					"0.0" // "1.22"
 
-	"viewdrift_ads_stand_scale_pitch" 				"0.3"
-	"viewdrift_ads_crouch_scale_pitch"				"0.3"
-	"viewdrift_ads_air_scale_pitch"   				"0.3"
-	"viewdrift_ads_stand_scale_yaw"   				"0.12"
-	"viewdrift_ads_crouch_scale_yaw"  				"0.12"
-	"viewdrift_ads_air_scale_yaw" 					"0.12"
-	"viewdrift_ads_speed_pitch"   					"0.6"
-	"viewdrift_ads_speed_yaw" 						"1.22"
+	"viewdrift_ads_stand_scale_pitch" 				"0.0" // "0.3"
+	"viewdrift_ads_crouch_scale_pitch"				"0.0" // "0.3"
+	"viewdrift_ads_air_scale_pitch"   				"0.0" // "0.3"
+	"viewdrift_ads_stand_scale_yaw"   				"0.0" // "0.12"
+	"viewdrift_ads_crouch_scale_yaw"  				"0.0" // "0.12"
+	"viewdrift_ads_air_scale_yaw" 					"0.0" // "0.12"
+	"viewdrift_ads_speed_pitch"   					"0.0" // "0.6"
+	"viewdrift_ads_speed_yaw" 						"0.0" // "1.22"
 
 	// Rumble
 	"fire_rumble"									"pilot_singleshot_strong_fire"
@@ -252,11 +252,11 @@ WeaponData
 
 	"npc_min_range"   								"0"
 	"npc_max_range"   								"768"
-
 	"npc_min_burst"									"1"
 	"npc_max_burst"									"1"
 	"rest_time_between_bursts_min"					"0.5"
 	"rest_time_between_bursts_max"					"0.5"
+	"npc_vortex_block"								"1"
 
 
 	"bob_tilt_angle"  								"0.5"
@@ -322,9 +322,10 @@ WeaponData
 			"viewkick_yaw_base"   							"*0.7"
 			"viewkick_yaw_random" 							"*0.7"
 
-			"damage_near_distance"							"250"
-			//"damage_near_value"   							"210"
-			"damage_far_value"								"28"
+			"damage_near_value"   							"255"
+			"damage_far_value"								"30" // "28"
+			"damage_near_distance"							"*0.9"
+			"damage_far_distance"							"*0.9"
 
 			"fire_sound_1_player_1p"						"SG_Twin_B.Fire_Suppressed"
 			"fire_sound_1_player_3p"						"SG_Twin_B.Fire_Suppressed"
@@ -351,6 +352,30 @@ WeaponData
 			"damage_near_value"   							"/1.1"
 			"damage_far_value"								"/1.1"
 		}
+		"double_tap"
+		{
+			"spread_stand_hip" 								"9"
+			"spread_stand_hip_run" 							"9"
+			"spread_stand_hip_sprint"                       "9"
+			"spread_stand_ads"  							"9"
+			"spread_crouch_hip"								"9"
+			"spread_crouch_ads"  							"9"
+			"spread_air_hip"	   							"9"
+			"spread_air_ads"   								"9"
+
+			"viewkick_pitch_base" 				"*1.2"
+			"viewkick_pitch_random" 			"*1.2"
+			"viewkick_yaw_base" 				"*1.2"
+			"viewkick_yaw_random" 				"*1.2"
+			"viewkick_scale_max_hipfire"        "*1.2"
+
+			"ammo_stockpile_max"							"46"
+			"ammo_default_total"							"46"
+
+			"fire_rate"   					"8"
+			"burst_fire_count"				"2"
+			"burst_fire_delay"				"0.35"			
+		}
 		pas_run_and_gun
 		{
 			"primary_fire_does_not_block_sprint"			"1"
@@ -361,16 +386,14 @@ WeaponData
 			"crosshair_index"								"1"
 			"damage_near_distance"							"100++"
 			"damage_far_distance" 							"100++"
-			"damage_near_value"   							"220"
-			"damage_far_value"								"25"
 
+			"is_burn_mod"									"1"
 			"ammo_stockpile_max"							"10++"
 			"ammo_default_total"							"10++"
 
-			"fire_rate"   									"2.5"
+			"fire_rate"   									"2.8"
 			"is_burn_mod"									"1"
 		}
-
 		dev_10shells
 		{
 			"ammo_stockpile_max"							"400"
@@ -382,8 +405,8 @@ WeaponData
 			"damage_near_value"   							"220"
 			"damage_far_value"								"25"
 
-			"ammo_stockpile_max"							"10++"
-			"ammo_default_total"							"10++"
+			"ammo_stockpile_max"							"40"
+			"ammo_default_total"							"40"
 
 			"fire_rate"   									"2.5"
 		}
